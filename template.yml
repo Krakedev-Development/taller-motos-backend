@@ -1597,6 +1597,15 @@ Resources:
               AuthorizationScopes:
                 - motorcycerepairshop-api/read
 
+  GetCategoriesApiLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub "/aws/lambda/GetCategoriesApi-${Environment}"
+      RetentionInDays: !Ref LogRetentionDays
+    DeletionPolicy: Retain
+    DependsOn: GetCategoriesApiFunction
+
+
   GetBrandsApiFunction:
     Type: AWS::Serverless::Function
     Properties:
@@ -1624,3 +1633,11 @@ Resources:
               Authorizer: CognitoAuthorizer
               AuthorizationScopes:
                 - motorcycerepairshop-api/read
+
+  GetBrandsApiLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub "/aws/lambda/GetBrandsApi-${Environment}"
+      RetentionInDays: !Ref LogRetentionDays
+    DeletionPolicy: Retain
+    DependsOn: GetBrandsApiFunction

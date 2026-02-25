@@ -10,7 +10,6 @@ def lambda_handler(event, context):
     print(f'context: {context}')
 
     try:
-        # Obtener todos los métodos de pago
         payment_methods = PaymentMethod.get_all()
         
         return ResponseUtils.success_response({

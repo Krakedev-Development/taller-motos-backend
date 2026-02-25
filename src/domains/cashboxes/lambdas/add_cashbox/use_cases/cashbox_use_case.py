@@ -19,14 +19,11 @@ class CashboxUseCase:
         Raises:
             Exception: Si no hay sesión abierta o si falla el guardado
         """
-        # Verificar que haya una sesión abierta
         session_id = self.repository.get_open_session_id(cashbox.id_user)
         if not session_id:
             raise Exception("No hay una sesión de caja abierta. Debe abrir la caja antes de registrar movimientos.")
         
-        # Asignar la sesión al movimiento si no la tiene
         if not cashbox.id_session:
             cashbox.id_session = session_id
         
-        # Guardar el movimiento (los triggers de BD calcularán el balance)
         return self.repository.save(cashbox)

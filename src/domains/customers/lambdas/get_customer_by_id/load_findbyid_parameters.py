@@ -9,7 +9,6 @@ def load_findbyid_parameters(event):
     print(f'Begin load_findbyid_parameters')
     print(f'Event: {event}')
 
-    # Get customer ID from path parameters
     path_parameters = event.get('pathParameters', None)
     if path_parameters is None or 'id' not in path_parameters:
         return ResponseUtils.bad_request_response(

@@ -35,14 +35,13 @@ def load_initial_parameters(event):
 
     validated_data = validate_and_convert_product_fields(request_body)
 
-    # Create Product instance
     product = Product(
         id_product=generate_uuid_hex(),
         code=validated_data["code"],
         name=validated_data["name"],
         description=validated_data["description"],
         price=validated_data["price"],
-        discount=validated_data.get("discount"),  # Allow None for discount
+        discount=validated_data.get("discount"),
         stock=validated_data["stock"],
         min_stock=validated_data.get("min_stock", 0),
         max_stock=validated_data.get("max_stock", 0),
@@ -62,7 +61,6 @@ def validate_and_convert_product_fields(data: dict) -> dict:
     """
     Validates and converts product field data types.
     """
-    # Expected types
     schema = {
         str: ['code', 'name', 'description', 'id_supplier', 'id_category', 'id_brand', 'model'],
         int: ['stock', 'min_stock', 'max_stock'],
@@ -70,7 +68,6 @@ def validate_and_convert_product_fields(data: dict) -> dict:
         bool: ['active']
     }
 
-    # Validation rules
     field_rules = {
         'code': {'required': True},
         'name': {'required': True},
@@ -87,15 +84,13 @@ def validate_and_convert_product_fields(data: dict) -> dict:
         'active': {'required': False}
     }
 
-    # Validate fields
     validation_exception.validate_fields(data, schema, context="producto", field_rules=field_rules)
 
-    # Convert numeric fields
     converted = data.copy()
     for field in ['price', 'discount']:
         value = converted.get(field)
         if value is None or value == '':
-            converted[field] = None  # Allow None for optional fields
+            converted[field] = None
         else:
             try:
                 converted[field] = float(value)
@@ -104,7 +99,6 @@ def validate_and_convert_product_fields(data: dict) -> dict:
                     f"El campo {field} debe ser un número válido"
                 )
 
-    # Apply business rules
     validate_business_rules(converted)
 
     return converted

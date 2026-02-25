@@ -5,7 +5,6 @@ from repositories.repair_repository import RepairRepository
 from use_cases.repair_use_case import RepairUseCase
 from utils.response_utils import ResponseUtils
 
-# Inicialización de dependencias
 db_client = DBClient.get_client()
 repository = RepairRepository(db_client)
 use_case = RepairUseCase(repository)

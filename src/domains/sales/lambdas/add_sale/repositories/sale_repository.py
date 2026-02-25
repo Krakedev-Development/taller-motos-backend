@@ -9,8 +9,6 @@ class SaleRepository:
         print(f'Data de venta para guardar: {sale_data}')
         response = self.db_client.rpc("insert_sale_with_details", sale_data).execute()
         print(f"Respuesta de insersion de venta: {response}")
-        # if not response.data:
-        #     raise ValueError("No se pudo insertar la venta")
         return response.data if response.data else None
 
     def delete(self, sale_id: int):

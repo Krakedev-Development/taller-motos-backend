@@ -5,7 +5,6 @@ from use_cases.cashbox_use_case import CurrentSessionUseCase
 from db.db_client import DBClient
 from utils.response_utils import ResponseUtils
 
-# Inicialización de dependencias
 db_client = DBClient.get_client()
 repository = CurrentSessionRepository(db_client)
 use_case = CurrentSessionUseCase(repository)
@@ -34,11 +33,9 @@ def lambda_handler(event, context):
     print(f'context: {context}')
 
     try:
-        # Obtener los parámetros de la query string
         query_params = event.get('queryStringParameters', {}) or {}
         user_id = query_params.get('user_id', None)
 
-        # Obtener sesión actual
         result = use_case.get_current_session(user_id)
 
         if result:

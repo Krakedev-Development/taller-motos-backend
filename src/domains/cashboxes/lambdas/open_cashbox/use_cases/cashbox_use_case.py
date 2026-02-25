@@ -21,11 +21,9 @@ class OpenCashboxUseCase:
         Raises:
             Exception: Si ya existe una sesión abierta o si el monto es inválido
         """
-        # Validar que el monto sea válido
         if opening_amount < 0:
             raise Exception("El monto de apertura no puede ser negativo")
 
-        # Abrir la sesión
         return self.repository.open_session(
             opening_amount=opening_amount,
             opened_by=opened_by,

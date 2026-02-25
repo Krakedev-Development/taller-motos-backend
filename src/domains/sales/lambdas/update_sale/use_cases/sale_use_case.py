@@ -10,12 +10,10 @@ class SaleUseCase:
         Updates an existing sale.
         """
         try:
-            # First verify the sale exists
             existing_sale = self.repository.find_by_id(id_sale)
             if existing_sale is None:
                 raise Exception(f'No se encontró la cotización con ID {id_sale}')
 
-            # Update the sale
             result = self.repository.update(id_sale, update_data)
             return result
         except Exception as e:

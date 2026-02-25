@@ -31,11 +31,8 @@ def cors_enabled(func):
 def cognito_auth_required(func):
     @wraps(func)
     def wrapper(event, context):
-        # --- EL SWITCH AUTOMÁTICO PARA ENTORNO LOCAL ---
-        # Si AWS_SAM_LOCAL es "true", significa que estamos en nuestro PC probando
         if os.environ.get("AWS_SAM_LOCAL") == "true":
             print("⚠️ Ejecución LOCAL detectada. Saltando validación de token de Cognito.")
-            # Simulamos que leímos un token excelente (con todos los permisos)
             event["user_payload"] = {
                 "user_id": "5d7ebf39-44c5-47ba-a1a8-0850ed5b2b04",
                 "scope": [
@@ -48,7 +45,6 @@ def cognito_auth_required(func):
             }
             return func(event, context)
 
-        # --- FLUJO DE PRODUCCIÓN (NUBE REAL) ---
         token = CognitoAuthUtils.extract_token_from_event(event)
         if not token:
             return ResponseUtils.unauthorized_response("Token de autorización requerido")

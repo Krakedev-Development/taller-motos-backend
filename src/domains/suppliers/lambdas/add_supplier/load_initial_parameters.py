@@ -18,15 +18,9 @@ def load_initial_parameters(event):
 
     validate_supplier_fields(data)
 
-    # # Validar los campos obligatorios
-    # for field in ["name", "ruc"]:
-    #     if not data.get(field):
-    #         return ResponseUtils.bad_request_response(f"El campo {field} es obligatorio")
 
-    # Obtener la fecha y hora actual
     now = datetime.now(timezone.utc).isoformat()
 
-    # Crear la instancia del proveedor con los datos recibidos
     supplier = Supplier(
         id_supplier=str(uuid.uuid4()),
         name=data["name"],
@@ -48,10 +42,8 @@ def validate_supplier_fields(data: dict):
     """
     Validates and converts product field data types.
     """
-    # Expected types
     schema = {
         str: ['name', 'surname', 'ruc', 'email'],
     }
 
-    # Validate fields
     validation_exception.validate_fields(data, schema, context="proveedor")

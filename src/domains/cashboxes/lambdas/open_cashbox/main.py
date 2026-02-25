@@ -5,7 +5,6 @@ from use_cases.cashbox_use_case import OpenCashboxUseCase
 from db.db_client import DBClient
 from utils.response_utils import ResponseUtils
 
-# Inicialización de dependencias
 db_client = DBClient.get_client()
 repository = OpenCashboxRepository(db_client)
 use_case = OpenCashboxUseCase(repository)
@@ -29,10 +28,8 @@ def lambda_handler(event, context):
     print(f'context: {context}')
 
     try:
-        # Obtener y validar el body
         body = json.loads(event.get('body', '{}'))
 
-        # Validar campos requeridos
         required_fields = ['opening_amount', 'opened_by']
         missing_fields = [field for field in required_fields if field not in body]
 
@@ -41,7 +38,6 @@ def lambda_handler(event, context):
                 f"Faltan los siguientes campos requeridos: {', '.join(missing_fields)}"
             )
 
-        # Validar que opening_amount sea un número válido
         try:
             opening_amount = float(body['opening_amount'])
         except (ValueError, TypeError):
@@ -50,11 +46,9 @@ def lambda_handler(event, context):
         if opening_amount < 0:
             return ResponseUtils.bad_request_response("El monto de apertura no puede ser negativo")
 
-        # Extraer datos
         opened_by = body['opened_by']
         notes = body.get('notes')
 
-        # Ejecutar caso de uso
         result = use_case.execute(
             opening_amount=opening_amount,
             opened_by=opened_by,
@@ -70,7 +64,6 @@ def lambda_handler(event, context):
         error_msg = str(e)
         print(f'Error al abrir sesión de caja: {error_msg}')
 
-        # Retornar error específico si ya existe sesión abierta
         if "Ya existe una sesión de caja abierta" in error_msg:
             return ResponseUtils.error_response(error_msg, 400)
 

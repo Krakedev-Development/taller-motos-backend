@@ -6,30 +6,25 @@ from repositories.customer_repository import CustomerRepository
 from db.db_client import DBClient
 from load_delete_parameters import load_delete_parameters
 
-# Inicialización de dependencias
 db_client = DBClient.get_client()
 repository = CustomerRepository(db_client)
 use_case = CustomerUseCase(repository)
 
 
-@cors_enabled  # Habilitar CORS para este endpoint
-@cognito_auth_required  # Asegura que el cliente esté autenticado
+@cors_enabled
+@cognito_auth_required
 def lambda_handler(event, context):
     print(f'event: {event}')
     print(f'context: {context}')
 
     try:
-        # Cargar ID del cliente desde el evento
         id_customer = load_delete_parameters(event)
 
-        # Si hay error en la carga de parámetros, retornar la respuesta de error
         if isinstance(id_customer, dict) and "statusCode" in id_customer:
             return id_customer
 
-        # Llamar al caso de uso para eliminar el cliente
         result = use_case.delete_customer(id_customer)
 
-        # Responder con éxito si el cliente se eliminó correctamente
         return ResponseUtils.success_response({
             "message": "Cliente eliminado exitosamente",
             "data": result
@@ -38,7 +33,6 @@ def lambda_handler(event, context):
     except Exception as e:
         error_message = str(e)
         
-        # Manejo específico para cliente no encontrado
         if "No se encontró el cliente" in error_message:
             return ResponseUtils.not_found_response(error_message)
         

@@ -6,7 +6,6 @@ from decorators.lambda_decorators import cors_enabled, cognito_auth_required
 from repositories.product_repository import ProductRepository
 from db.db_client import DBClient
 
-# Inicialización de dependencias
 db_client = DBClient.get_client()
 repository = ProductRepository(db_client)
 use_case = ProductUseCase(repository)
@@ -19,15 +18,9 @@ def lambda_handler(event, context):
     print(f'context: {context}')
 
     try:
-        # Obtener headers CORS dinámicos
         origin = event.get("headers", {}).get("Origin")
         headers = ResponseUtils.get_cors_headers(origin)
 
-        # # ✅ Soporte para query params o path params
-        # parameters = event.get('queryStringParameters') or {}
-        # path_params = event.get("pathParameters") or {}
-        #
-        # product_id = parameters.get('id_product') or path_params.get("id_product")
 
         path_parameters = event.get('pathParameters', None)
         if path_parameters is None or 'id' not in path_parameters:
@@ -52,7 +45,6 @@ def lambda_handler(event, context):
 
         print(f"Consultando producto con ID: {product_id}")
 
-        # Ejecutar caso de uso
         product = use_case.get_product_by_id(product_id)
 
         print(f'Producto recuperado: {product}')
@@ -60,7 +52,6 @@ def lambda_handler(event, context):
         if not product:
             return ResponseUtils.not_found_response(f"No se ha encontrado producto con id: {product_id}")
 
-        # Respuesta exitosa
         response_data = {
             "data": product
         }

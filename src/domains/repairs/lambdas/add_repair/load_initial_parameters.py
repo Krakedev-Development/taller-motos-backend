@@ -15,12 +15,9 @@ logging.basicConfig(filename='event.log', level=logging.DEBUG)
 
 def load_initial_parameters(event) -> dict:
     print("Begin loading_initial_parameters")
-    # print(f"Event: {event}")
 
-    # requestBody = event.get("body", None)
     requestBody = format_data(event)
 
-    # requestBody = json.loads(requestBody)
     print(f"Request body: {requestBody}")
     validate_fields(requestBody)
 
@@ -41,18 +38,15 @@ def format_data(event) -> dict:
             "body": json.dumps({"message": "Se debe proporcionar el cuerpo de la petición"})
         }
 
-    # Decodificar correctamente los bytes
     if event.get("isBase64Encoded", False):
         body_bytes = base64.b64decode(body)
     else:
         body_bytes = body if isinstance(body, (bytes, bytearray)) else body.encode()
 
-    # Inicializar resultado
     result = {}
     photos = []
 
     if "multipart/form-data" in content_type.lower():
-        # Parse multipart/form-data
         multipart_data = decoder.MultipartDecoder(body_bytes, content_type)
 
         for idx, part in enumerate(multipart_data.parts):
@@ -76,7 +70,6 @@ def format_data(event) -> dict:
                 })
 
     else:
-        # Si no es multipart, asumimos JSON raw
         try:
             result = json.loads(body_bytes.decode("utf-8"))
         except Exception as e:
@@ -88,8 +81,6 @@ def format_data(event) -> dict:
 
     logging.debug(f"IMAGES: {photos}")
 
-    # print("payload presente?:", bool(result))
-    # print("cantidad photos:", len(photos))
 
     return result
 
@@ -143,10 +134,9 @@ def validate_fields(request_body: dict):
     for idx, product in enumerate(products, start=1):
 
         if not isinstance(product, dict):
-            raise ValueError(f"Cada producto debe ser un objeto válido (error en producto #{idx})")
+            raise ValueError(f"Cada producto debe ser un objeto válido (error en producto
 
         validation_exception.validate_fields(product, product_fields, context="products", field_rules=field_rules)
-    # photos = request_body["photos"]
 
 
 def generate_repair_data(request_body: dict) -> dict:

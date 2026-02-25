@@ -11,12 +11,10 @@ class ProductUseCase:
         Updates an existing product.
         """
         try:
-            # First verify the product exists
             existing_product = self.repository.find_by_id(id_product)
             if existing_product is None:
                 raise Exception(f'No se encontró el producto con ID {id_product}')
             
-            # Update the product
             result = self.repository.update(id_product, update_data)
             return result
         except Exception as e:

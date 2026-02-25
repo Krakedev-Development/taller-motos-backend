@@ -14,9 +14,8 @@ def role_required(allowed_roles):
         @wraps(func)
         def wrapper(event, context):
             try:
-                client_id = event["client_id"]  # El client_id debe estar presente en el evento
+                client_id = event["client_id"]
 
-                # Consultar roles del cliente desde la tabla client_roles
                 query = """
                     SELECT r.role_name 
                     FROM client_roles cr
@@ -31,11 +30,9 @@ def role_required(allowed_roles):
                 if not roles:
                     return ResponseUtils.forbidden_response("Cliente no encontrado o sin rol asignado")
 
-                # Verificar si el cliente tiene uno de los roles permitidos
                 if not any(role in allowed_roles for role in roles):
                     return ResponseUtils.forbidden_response(f"Acceso denegado. Se requiere uno de los roles: {', '.join(allowed_roles)}. Tu rol(es): {', '.join(roles)}")
 
-                # Añadir roles al evento para uso posterior
                 event["client_roles"] = roles
 
                 return func(event, context)

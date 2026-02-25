@@ -9,12 +9,10 @@ class CustomerUseCase:
         Elimina un cliente de la base de datos.
         """
         try:
-            # Primero verificar que el cliente existe
             existing_customer = self.repository.find_by_id(id_customer)
             if existing_customer is None:
                 raise Exception(f'No se encontró el cliente con ID {id_customer}')
             
-            # Eliminar el cliente
             result = self.repository.delete(id_customer)
             return result
         except Exception as e:

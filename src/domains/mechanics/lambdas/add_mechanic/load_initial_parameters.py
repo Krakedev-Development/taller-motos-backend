@@ -14,15 +14,12 @@ def load_initial_parameters(event):
     except json.JSONDecodeError:
         return ResponseUtils.bad_request_response("El cuerpo de la petición no tiene un formato JSON válido")
 
-    # Validar los campos obligatorios
     for field in ["id_number", "name"]:
         if not data.get(field):
             return ResponseUtils.bad_request_response(f"El campo {field} es obligatorio")
 
-    # Obtener la fecha y hora actual
     now = datetime.now(timezone.utc).isoformat()
 
-    # Crear la instancia del mecánico con los datos recibidos
     mechanic = Mechanic(
         id_mechanic=str(uuid.uuid4()),
         id_number=data["id_number"],

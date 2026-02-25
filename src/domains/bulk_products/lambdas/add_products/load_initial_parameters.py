@@ -44,7 +44,7 @@ def validate_product_fields(products: dict):
     for idx, product in enumerate(products, start=1):
 
         if not isinstance(product, dict):
-            raise ValueError(f"Cada producto debe ser un objeto válido (error en producto #{idx})")
+            raise ValueError(f"Cada producto debe ser un objeto válido (error en producto
 
         validation_exception.validate_fields(product, required_fields, context="products")
 

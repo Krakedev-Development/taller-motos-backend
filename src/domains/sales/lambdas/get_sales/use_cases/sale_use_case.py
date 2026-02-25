@@ -17,7 +17,6 @@ class SaleUseCase:
         logger.info(f'Input parameters: page={page}, limit={limit}, search={search}, record_type={record_type}, payment_method={payment_method}')
         
         try:
-            # Normalize payment_method: treat empty strings or 'null' as None
             pm = payment_method
             if isinstance(pm, str) and pm.strip().lower() in ("", "null"):
                 logger.info(f'Normalizing payment_method: "{payment_method}" -> None')

@@ -19,11 +19,9 @@ class DashboardRepository:
             dict: Diccionario con los datos del dashboard
         """
         try:
-            # Consultar la vista dashboard_summary
             response = self.db_client.table("dashboard_summary").select("*").single().execute()
             
             if not response.data:
-                # Si no hay datos, retornar valores por defecto
                 return {
                     "total_products": 0,
                     "pending_repairs": 0,
@@ -53,11 +51,9 @@ class DashboardRepository:
             dict: Diccionario con los datos del dashboard
         """
         try:
-            # Consultar la vista dashboard_summary
             response = self.db_client.table("dashboard_summary_seller").select("*").single().execute()
             
             if not response.data:
-                # Si no hay datos, retornar valores por defecto
                 return {
                     "daily_sales": 0,
                     "pending_repairs": 0,

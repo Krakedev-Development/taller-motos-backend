@@ -6,30 +6,25 @@ from repositories.repair_repository import RepairRepository
 from db.db_client import DBClient
 from load_initial_parameters import load_initial_parameters
 
-# Inicialización de dependencias
 db_client = DBClient.get_client()
 repository = RepairRepository(db_client)
 use_case = RepairUseCase(repository)
 
 
-@cors_enabled  # Habilitar CORS para este endpoint
-@cognito_auth_required  # Asegura que el proveedor esté autenticado
+@cors_enabled
+@cognito_auth_required
 def lambda_handler(event, context):
     print(f'event: {event}')
     print(f'context: {context}')
 
     try:
-        # Cargar ID del cliente desde el evento
         id_repair = load_initial_parameters(event)
 
-        # Si hay error en la carga de parámetros, retornar la respuesta de error
         if isinstance(id_repair, dict) and "statusCode" in id_repair:
             return id_repair
 
-        # Llamar al caso de uso para buscar el reparación
         result = use_case.find_repair_by_id(id_repair)
 
-        # Responder con éxito si el reparación se encontró
         return ResponseUtils.success_response({
             "data": result
         })
@@ -37,7 +32,6 @@ def lambda_handler(event, context):
     except Exception as e:
         error_message = str(e)
 
-        # Manejo específico para reparación no encontrado
         if "No se encontró la reparación" in error_message:
             return ResponseUtils.not_found_response(error_message)
 

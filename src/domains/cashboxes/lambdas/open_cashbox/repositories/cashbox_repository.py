@@ -32,14 +32,12 @@ class OpenCashboxRepository:
         Raises:
             Exception: Si ya existe una sesión abierta o si falla la creación
         """
-        # Verificar si ya existe una sesión abierta hoy
         existing_session_id = self.get_open_session(opened_by)
 
         if existing_session_id:
             raise Exception("Ya existe una sesión de caja abierta para hoy. Debe cerrarla antes de abrir una nueva.")
 
         try:
-            # Crear nueva sesión
             session_data = {
                 "opening_amount": opening_amount,
                 "opened_by": opened_by,

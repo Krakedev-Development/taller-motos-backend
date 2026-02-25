@@ -6,7 +6,6 @@ from repositories.cashbox_repository import CashboxRepository
 from db.db_client import DBClient
 from utils.response_utils import ResponseUtils
 
-# Inicialización de dependencias
 db_client = DBClient.get_client()
 repository = CashboxRepository(db_client)
 use_case = CashboxUseCase(repository)
@@ -33,33 +32,26 @@ def lambda_handler(event, context):
     print(f'context: {context}')
 
     try:
-        # Obtener los parámetros de la query string
         query_params = event.get('queryStringParameters', {}) or {}
 
-        # Obtener parámetros validados o usar los de la query string como respaldo
         validated_params = event.get("validated_params", {})
 
-        # Parámetros de paginación
         try:
             page = int(validated_params.get("page") or query_params.get("page", 1))
             limit = int(validated_params.get("limit") or query_params.get("limit", 10))
 
-            # Asegurarse de que page y limit sean números válidos
-            page = max(1, page)  # página mínima es 1
-            limit = max(1, min(50, limit))  # límite entre 1 y 50
+            page = max(1, page)
+            limit = max(1, min(50, limit))
         except (ValueError, TypeError):
             return ResponseUtils.bad_request_response("Los parámetros 'page' y 'limit' deben ser números válidos")
 
-        # Parámetro de búsqueda
         search = validated_params.get("search") or query_params.get("search")
 
-        # Filtros adicionales
         session_id = query_params.get("session_id")
         date_from = query_params.get("date_from")
         date_to = query_params.get("date_to")
-        user_id = query_params.get("user_id")  # Nuevo filtro
+        user_id = query_params.get("user_id")
 
-        # Llamar al use case con todos los parámetros
         result = use_case.get_all_cashboxes(
             page=page,
             limit=limit,

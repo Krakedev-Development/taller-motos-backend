@@ -54,7 +54,6 @@ class CashboxSession:
             "status": self.status
         }
         
-        # Campos opcionales
         if self.session_date:
             data["session_date"] = self.session_date.isoformat() if isinstance(self.session_date, date) else self.session_date
         if self.closed_by:

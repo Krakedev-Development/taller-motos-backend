@@ -6,30 +6,25 @@ from repositories.sale_repository import SaleRepository
 from db.db_client import DBClient
 from load_initial_parameters import load_initial_parameters
 
-# Inicialización de dependencias
 db_client = DBClient.get_client()
 repository = SaleRepository(db_client)
 use_case = SaleUseCase(repository)
 
 
-@cors_enabled  # Habilitar CORS para este endpoint
-@cognito_auth_required  # Asegura que el proveedor esté autenticado
+@cors_enabled
+@cognito_auth_required
 def lambda_handler(event, context):
     print(f'event: {event}')
     print(f'context: {context}')
 
     try:
-        # Cargar ID del cliente desde el evento
         id_sale = load_initial_parameters(event)
 
-        # Si hay error en la carga de parámetros, retornar la respuesta de error
         if isinstance(id_sale, dict) and "statusCode" in id_sale:
             return id_sale
 
-        # Llamar al caso de uso para buscar la venta
         result = use_case.find_sale_by_id(id_sale)
 
-        # Responder con éxito si la venta se encontró
         return ResponseUtils.success_response({
             "data": result
         })
@@ -37,7 +32,6 @@ def lambda_handler(event, context):
     except Exception as e:
         error_message = str(e)
 
-        # Manejo específico para venta no encontrado
         if "No se encontró la venta" in error_message:
             return ResponseUtils.not_found_response(error_message)
 

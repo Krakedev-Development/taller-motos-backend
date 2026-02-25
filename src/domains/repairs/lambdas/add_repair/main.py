@@ -9,7 +9,6 @@ from repositories.vehicle_repository import VehicleRepository
 from use_cases.repair_use_case import RepairUseCase
 from use_cases.save_images_use_case import SaveImagesUseCase
 
-# Inicialización de dependencias
 db_client = DBClient.get_client()
 repair_repository = RepairRepository(db_client)
 vehicle_repository = VehicleRepository(db_client)
@@ -17,25 +16,21 @@ repair_use_case = RepairUseCase(repair_repository)
 storage_repository = StorageRepository(db_client, "repairs-images")
 image_use_case = SaveImagesUseCase(storage_repository)
 
-@cors_enabled  # Habilitar CORS para este endpoint
-@cognito_auth_required # Asegura que el cliente esté autenticado
+@cors_enabled
+@cognito_auth_required
 def lambda_handler(event, context):
     print(f'event: {event}')
     print(f'context: {context}')
 
     try:
-        # Cargar parámetros de la reparación desde el evento
         repair_data = load_initial_parameters(event)
 
         if isinstance(repair_data, dict) and "statusCode" in repair_data:
-            return repair_data  # Retornar respuesta de error si algo salió mal
+            return repair_data
 
-        # url_images = image_use_case.execute(repair_data["photos"])
 
-        # Llamar al caso de uso para agregar la reparación
         result = repair_use_case.execute(repair_data)
         
-        # Responder con éxito si la reparación se agregó correctamente
         return ResponseUtils.created_response({"data": result})
 
     except Exception as e:

@@ -11,7 +11,6 @@ def load_initial_parameters(event):
     print(f'Begin load_update_parameters')
     print(f'Event: {event}')
 
-    # Get supplier ID from path parameters
     path_parameters = event.get('pathParameters', None)
     if path_parameters is None or 'id' not in path_parameters:
         return ResponseUtils.bad_request_response(
@@ -24,7 +23,6 @@ def load_initial_parameters(event):
             "El ID del mecánico no puede estar vacío"
         )
 
-    # Get request body
     body = event.get('body', None)
     if not body:
         return ResponseUtils.bad_request_response(
@@ -40,13 +38,11 @@ def load_initial_parameters(event):
 
     print(f'request_body: {data}')
 
-    # Validate that at least one field is provided for update
     if not data:
         return ResponseUtils.bad_request_response(
             "Se debe proporcionar al menos un campo para actualizar"
         )
 
-    # Prepare update data with only allowed fields
     allowed_fields = [
         "name", "surname", "phone", "email", "address", "salary", "active"
     ]
@@ -56,13 +52,11 @@ def load_initial_parameters(event):
         if field in data:
             update_data[field] = data[field]
 
-    # If no valid fields were provided
     if not update_data:
         return ResponseUtils.bad_request_response(
             "No se proporcionaron campos válidos para actualizar"
         )
 
-    # Validate email format if provided
     if "email" in update_data and update_data["email"]:
         if not validate_email(update_data["email"]):
             return ResponseUtils.bad_request_response(
@@ -75,7 +69,6 @@ def load_initial_parameters(event):
                 "El campo active debe ser un valor booleano"
             )
 
-    # Add updated_at timestamp
     update_data['updated_at'] = datetime.now(timezone.utc).isoformat()
 
     return id_mechanic, update_data

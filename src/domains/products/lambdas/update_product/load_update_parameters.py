@@ -7,7 +7,6 @@ def load_update_parameters(event):
     print(f'Begin load_update_parameters')
     print(f'Event: {event}')
 
-    # Get supplier ID from path parameters
     path_parameters = event.get('pathParameters', None)
     if path_parameters is None or 'id' not in path_parameters:
         return {
@@ -26,7 +25,6 @@ def load_update_parameters(event):
             })
         }
 
-    # Get request body
     request_body = event.get('body', None)
     if request_body is None:
         return {
@@ -48,7 +46,6 @@ def load_update_parameters(event):
 
     print(f'request_body: {request_body}')
 
-    # Validate that at least one field is provided for update
     if not request_body:
         return {
             "statusCode": 400,
@@ -57,10 +54,8 @@ def load_update_parameters(event):
             })
         }
 
-    # Validate and convert fields
     validated_data = validate_and_convert_update_fields(request_body)
 
-    # Add updated_at timestamp
     validated_data['updated_at'] = datetime.now(timezone.utc).isoformat()
 
     return id_product, validated_data
@@ -71,7 +66,6 @@ def validate_and_convert_update_fields(data: dict) -> dict:
     Validates and converts product update field data types.
     All fields are optional for updates.
     """
-    # Expected types (all optional for updates)
     schema = {
         str: ['code', 'name', 'description', 'id_supplier', 'id_category', 'id_brand', 'model'],
         int: ['stock', 'min_stock', 'max_stock'],
@@ -79,7 +73,6 @@ def validate_and_convert_update_fields(data: dict) -> dict:
         bool: ['active']
     }
 
-    # All fields are optional for updates
     field_rules = {
         'code': {'required': False},
         'name': {'required': False},
@@ -96,10 +89,8 @@ def validate_and_convert_update_fields(data: dict) -> dict:
         'active': {'required': False}
     }
 
-    # Validate only the fields that are present
     validation_exception.validate_fields(data, schema, context="producto", field_rules=field_rules)
 
-    # Convert numeric fields if present
     converted = data.copy()
     for field in ['price', 'discount']:
         if field in converted:
@@ -114,7 +105,6 @@ def validate_and_convert_update_fields(data: dict) -> dict:
                         f"El campo {field} debe ser un número válido"
                     )
 
-    # Apply business rules for fields being updated
     validate_update_business_rules(converted)
 
     return converted
@@ -124,7 +114,6 @@ def validate_update_business_rules(data: dict):
     """
     Applies custom business rules for product update validation.
     """
-    # Validate min_stock vs max_stock if both are provided
     if 'min_stock' in data and 'max_stock' in data:
         min_stock = data.get('min_stock', 0)
         max_stock = data.get('max_stock', 0)
@@ -133,7 +122,6 @@ def validate_update_business_rules(data: dict):
                 "El stock mínimo no puede ser mayor al stock máximo"
             )
 
-    # Validate price if provided
     if 'price' in data:
         price = data.get('price')
         if price is not None and price <= 0:
@@ -141,7 +129,6 @@ def validate_update_business_rules(data: dict):
                 "El precio debe ser mayor a 0"
             )
 
-    # Validate discount if provided
     if 'discount' in data:
         discount = data.get('discount')
         if discount is not None:

@@ -17,13 +17,11 @@ def load_initial_parameters(event):
     except json.JSONDecodeError:
         return ResponseUtils.bad_request_response("El cuerpo de la petición no tiene un formato JSON válido")
 
-    # Validar campos obligatorios
     required_fields = ["type", "amount", "id_user", "concept"]
     for field in required_fields:
         if field not in data or data[field] is None or str(data[field]).strip() == "":
             return ResponseUtils.bad_request_response(f"El campo '{field}' es obligatorio")
 
-    # Normalizar tipo de movimiento (permitir español e inglés)
     translations = {
         "INGRESO": "INCOME",
         "EGRESO": "EXPENSE",
@@ -41,7 +39,6 @@ def load_initial_parameters(event):
             "El campo 'type' debe ser 'INCOME'/'INGRESO', 'EXPENSE'/'EGRESO' o 'ADJUSTMENT'/'AJUSTE'"
         )
 
-    # Validar que el monto sea un número positivo
     try:
         amount = float(data["amount"])
         if amount <= 0:
@@ -49,21 +46,18 @@ def load_initial_parameters(event):
     except (ValueError, TypeError):
         return ResponseUtils.bad_request_response("El monto debe ser un número válido")
 
-    # Validar concepto no vacío
     concept = str(data["concept"]).strip()
     if not concept:
         return ResponseUtils.bad_request_response("El concepto no puede estar vacío")
 
-    # Crear objeto Cashbox
-    # Nota: id_session será asignado automáticamente por el trigger de la BD
     cashbox = Cashbox(
         id_cashbox=generate_uuid_str(),
         id_user=data["id_user"],
-        id_session=None,  # El trigger lo asignará automáticamente
+        id_session=None,
         type=movement_type,
         concept=concept,
         amount=amount,
-        id_sale=None  # Los movimientos manuales no tienen venta asociada
+        id_sale=None
     )
 
     return cashbox

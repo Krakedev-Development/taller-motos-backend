@@ -24,11 +24,9 @@ class CloseCashboxUseCase:
         Raises:
             Exception: Si no hay sesión abierta, monto inválido o falla el cierre
         """
-        # Validar que el monto sea válido
         if actual_closing < 0:
             raise Exception("El monto de cierre no puede ser negativo")
 
-        # Cerrar la sesión (el trigger calculará expected_closing y difference)
         return self.repository.close_session(
             actual_closing=actual_closing,
             closed_by=closed_by,

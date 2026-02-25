@@ -19,25 +19,20 @@ class CurrentSessionUseCase:
 
             None si no hay sesión abierta
         """
-        # Obtener ID de sesión abierta
         session_id = self.repository.get_open_session_id(opened_by)
 
         if not session_id:
             return None
 
-        # Obtener detalles de la sesión
         session = self.repository.get_session_details(session_id)
 
         if not session:
             return None
 
-        # Calcular balance esperado actual
         expected_closing = self.repository.calculate_expected_closing(session_id)
 
-        # Obtener cantidad de movimientos
         movements_count = self.repository.get_session_movements_count(session_id)
 
-        # Agregar información calculada
         session["expected_closing_current"] = expected_closing
         session["movements_count"] = movements_count
 

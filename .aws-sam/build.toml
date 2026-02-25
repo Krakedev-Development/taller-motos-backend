@@ -342,6 +342,24 @@ manifest_hash = ""
 packagetype = "Zip"
 functions = ["GetPaymentMethodsApiFunction"]
 
+[function_build_definitions.3fb2bbe0-8590-480c-8d70-7f84c7593659]
+codeuri = "C:\\Users\\Edwin Alomoto\\Documents\\GitHub\\taller-motos-backend\\src\\domains\\products\\lambdas\\get_categories"
+runtime = "python3.12"
+architecture = "x86_64"
+handler = "main.lambda_handler"
+manifest_hash = ""
+packagetype = "Zip"
+functions = ["GetCategoriesApiFunction"]
+
+[function_build_definitions.0c318058-2d35-483b-88c8-bc7e274fe240]
+codeuri = "C:\\Users\\Edwin Alomoto\\Documents\\GitHub\\taller-motos-backend\\src\\domains\\products\\lambdas\\get_brands"
+runtime = "python3.12"
+architecture = "x86_64"
+handler = "main.lambda_handler"
+manifest_hash = ""
+packagetype = "Zip"
+functions = ["GetBrandsApiFunction"]
+
 [layer_build_definitions.7fa45306-d3a7-469e-aa8f-3e6c788ae67d]
 layer_name = "SharedLayer"
 codeuri = "C:\\Users\\Edwin Alomoto\\Documents\\GitHub\\taller-motos-backend\\layers\\shared"

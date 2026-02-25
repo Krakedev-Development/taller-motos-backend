@@ -66,10 +66,9 @@ class CashboxUseCase:
         if not session:
             return None
 
-        # Obtener movimientos de la sesión (sin límite para traer todos)
         movements, _ = self.repository.find_all(
             page=1,
-            limit=1000,  # Límite alto para obtener todos los movimientos de la sesión
+            limit=1000,
             session_id=session_id
         )
 

@@ -6,30 +6,25 @@ from repositories.mechanic_repository import MechanicRepository
 from db.db_client import DBClient
 from load_initial_parameters import load_initial_parameters
 
-# Inicialización de dependencias
 db_client = DBClient.get_client()
 repository = MechanicRepository(db_client)
 use_case = MechanicUseCase(repository)
 
 
-@cors_enabled  # Habilitar CORS para este endpoint
-@cognito_auth_required  # Asegura que el mecánico esté autenticado
+@cors_enabled
+@cognito_auth_required
 def lambda_handler(event, context):
     print(f'event: {event}')
     print(f'context: {context}')
 
     try:
-        # Cargar ID del cliente desde el evento
         id_customer = load_initial_parameters(event)
 
-        # Si hay error en la carga de parámetros, retornar la respuesta de error
         if isinstance(id_customer, dict) and "statusCode" in id_customer:
             return id_customer
 
-        # Llamar al caso de uso para buscar el mecánico
         result = use_case.find_customer_by_id(id_customer)
 
-        # Responder con éxito si el mecánico se encontró
         return ResponseUtils.success_response({
             "data": result
         })
@@ -37,7 +32,6 @@ def lambda_handler(event, context):
     except Exception as e:
         error_message = str(e)
 
-        # Manejo específico para cliente no encontrado
         if "No se encontró el mecánico" in error_message:
             return ResponseUtils.not_found_response(error_message)
 

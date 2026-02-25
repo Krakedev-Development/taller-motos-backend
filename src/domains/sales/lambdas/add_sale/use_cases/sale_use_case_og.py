@@ -24,7 +24,7 @@ class SaleUseCase:
 
         sale = sale_data["sale"]
         details = sale_data["details"]
-        products = sale_data["products"]  # ya es dict
+        products = sale_data["products"]
         inserted_sale = None
 
         try:

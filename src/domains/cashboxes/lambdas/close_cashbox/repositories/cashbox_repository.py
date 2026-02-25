@@ -60,7 +60,6 @@ class CloseCashboxRepository:
         Raises:
             Exception: Si no hay sesión abierta o si falla el cierre
         """
-        # Obtener la sesión abierta actual
         session_id = self.get_open_session_id(closed_by)
 
         if not session_id:
@@ -69,13 +68,10 @@ class CloseCashboxRepository:
         print(f'session_id: {session_id}')
 
         try:
-            # Obtener detalles de la sesión para verificar
             session = self.get_session_details(session_id)
             if not session:
                 raise Exception("No se encontró la sesión de caja")
 
-            # El trigger calculará expected_closing y difference automáticamente
-            # Solo necesitamos actualizar los campos básicos
             update_data = {
                 "actual_closing": actual_closing,
                 "closed_by": closed_by,

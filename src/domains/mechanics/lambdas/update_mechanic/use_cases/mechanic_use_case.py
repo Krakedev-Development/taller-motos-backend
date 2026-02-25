@@ -10,12 +10,10 @@ class MechanicUseCase:
         Updates an existing supplier.
         """
         try:
-            # First verify the mechanic exists
             existing_mechanic = self.repository.find_by_id(id_mechanic)
             if existing_mechanic is None:
                 raise Exception(f'No se encontró el mecánico con ID {id_mechanic}')
 
-            # Update the mechanic
             result = self.repository.update(id_mechanic, update_data)
             return result
         except Exception as e:

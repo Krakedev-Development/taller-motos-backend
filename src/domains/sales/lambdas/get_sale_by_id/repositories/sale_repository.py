@@ -10,10 +10,6 @@ class SaleRepository:
         Busca una venta por ID.
         """
         try:
-            # response = self.db_client.table("sales") \
-            #     .select("*") \
-            #     .eq('id_sale', id_sale) \
-            #     .execute()
 
             response = self.db_client.rpc("get_sales_cpr", {
                 "p_id_sale": id_sale,
@@ -32,20 +28,3 @@ class SaleRepository:
             print(f"Error al buscar la venta: {str(e)}")
             raise Exception(f'Ha ocurrido un problema al buscar el venta: {str(e)}')
 
-    # def find_sale_detail_by_id(self, id_sale: str):
-    #     """
-    #     Busca detalle de una venta por ID.
-    #     """
-    #     try:
-    #         response = self.db_client.table("sale_details") \
-    #             .select("*") \
-    #             .eq('id_sale', id_sale) \
-    #             .execute()
-    #
-    #         if not response.data:
-    #             return None
-    #
-    #         return response.data
-    #     except Exception as e:
-    #         print(f"Error al buscar el detalle de la venta: {str(e)}")
-    #         raise Exception(f'Ha ocurrido un problema al buscar el detalle de la venta: {str(e)}')

@@ -14,4 +14,3 @@ class SupplierRepository:
         except Exception as e:
             print(f"Error al guardar el proveedor: {str(e)}")
             raise Exception("Error al guardar el proveedor")
-            # return None

@@ -7,30 +7,25 @@ from repositories.product_repository import ProductRepository
 from db.db_client import DBClient
 from load_delete_parameters import load_delete_parameters
 
-# Inicialización de dependencias
 db_client = DBClient.get_client()
 repository = ProductRepository(db_client)
 use_case = ProductUseCase(repository)
 
 
-@cors_enabled  # Habilitar CORS para este endpoint
-@cognito_auth_required  # Asegura que el cliente esté autenticado
+@cors_enabled
+@cognito_auth_required
 def lambda_handler(event, context):
     print(f'event: {event}')
     print(f'context: {context}')
 
     try:
-        # Cargar ID del producto desde el evento
         id_product = load_delete_parameters(event)
 
-        # Si hay error en la carga de parámetros, retornar la respuesta de error
         if isinstance(id_product, dict) and "statusCode" in id_product:
             return id_product
 
-        # Llamar al caso de uso para eliminar el producto
         result = use_case.delete_product(id_product)
 
-        # Responder con éxito si el producto se eliminó correctamente
         return ResponseUtils.success_response({
             "message": "Producto eliminado exitosamente",
             "data": result
@@ -39,7 +34,6 @@ def lambda_handler(event, context):
     except Exception as e:
         error_message = str(e)
         
-        # Manejo específico para producto no encontrado
         if "No se encontró el producto" in error_message:
             return ResponseUtils.not_found_response(error_message)
         

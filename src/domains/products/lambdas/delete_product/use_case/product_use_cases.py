@@ -10,12 +10,10 @@ class ProductUseCase:
         Deletes a product from the database.
         """
         try:
-            # First verify the product exists
             existing_product = self.repository.find_by_id(id_product)
             if existing_product is None:
                 raise Exception(f'No se encontró el producto con ID {id_product}')
             
-            # Delete the product
             result = self.repository.delete(id_product)
             return result
         except Exception as e:

@@ -14,7 +14,6 @@ def validate_pagination_and_search(max_limit: int = 100):
             try:
                 query_params = event.get("queryStringParameters") or {}
 
-                # Parsear page y limit
                 try:
                     page = int(query_params.get("page", 1))
                     limit = int(query_params.get("limit", 10))
@@ -33,11 +32,9 @@ def validate_pagination_and_search(max_limit: int = 100):
                         "El parámetro 'limit' debe ser mayor o igual a 1"
                     )
                 
-                # Añadimos el límite máximo de registros
                 if limit > max_limit:
                     limit = max_limit
 
-                # Validar search (opcional)
                 search = query_params.get("search", "").strip() if query_params.get("search") else None
                 if search:
                     if len(search) > 100:
@@ -45,7 +42,6 @@ def validate_pagination_and_search(max_limit: int = 100):
                             "El parámetro 'search' no puede tener más de 100 caracteres"
                         )
 
-                # Construir validated_params
                 event["validated_params"] = {
                     "page": page,
                     "limit": limit,

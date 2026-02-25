@@ -39,7 +39,6 @@ class CashboxRepository:
 
         except Exception as e:
             error_message = str(e)
-            # Capturar errores específicos de la BD
             if "No hay una caja abierta" in error_message:
                 raise Exception("No hay una sesión de caja abierta. Debe abrir la caja antes de registrar movimientos.")
             else:

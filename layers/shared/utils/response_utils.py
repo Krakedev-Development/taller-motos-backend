@@ -1,4 +1,3 @@
-# utils/response_utils.py
 import json
 from typing import Dict, Any, Optional
 
@@ -9,19 +8,7 @@ class ResponseUtils:
     def get_cors_headers(origin: str = None) -> Dict[str, str]:
         """Obtiene los headers CORS básicos"""
 
-        # allowed_origins = [
-        #     "https://motorcycle-repair-shop-user-pool.auth.us-east-1.amazoncognito.com",
-        #     "http://localhost:3000",
-        #     "https://localhost:3000",
-        #     "*"  # Para desarrollo, considera remover en producción
-        # ]
 
-        # # Determinar el origen permitido
-        # if origin and origin in allowed_origins:
-        #     allowed_origin = origin
-        # else:
-        #     # Si no hay origin específico o no está en la lista, usar "*" o el primero
-        #     allowed_origin = "*"  # O allowed_origins[0] si prefieres ser más restrictivo
 
         return {
             "Access-Control-Allow-Origin": "*",
@@ -41,7 +28,7 @@ class ResponseUtils:
         return {
             "statusCode": status_code,
             "headers": headers,
-            "body": json.dumps(data, ensure_ascii=False, default=str)  # ✅ default=str para serializar objetos complejos
+            "body": json.dumps(data, ensure_ascii=False, default=str)
         }
     
     @staticmethod

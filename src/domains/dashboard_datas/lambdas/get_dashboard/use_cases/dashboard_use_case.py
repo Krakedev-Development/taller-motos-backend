@@ -16,11 +16,9 @@ class DashboardUseCase:
         Returns:
             dict: Diccionario con los datos del dashboard
         """
-        # Si el código es SELLER, usar el dashboard de vendedor
         if code and code.upper() == "SELLER":
             return self._get_seller_dashboard()
         
-        # Por defecto, usar el dashboard de admin
         return self._get_admin_dashboard()
     
     def _get_admin_dashboard(self) -> Dict[str, Any]:

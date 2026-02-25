@@ -10,10 +10,10 @@ class Cashbox:
         self.id_user = id_user
         self.id_session = id_session
         self.id_sale = id_sale
-        self.type = type  # "INCOME", "EXPENSE", o "ADJUSTMENT"
+        self.type = type
         self.concept = concept
         self.amount = amount
-        self.balance = balance  # Calculado por triggers
+        self.balance = balance
         self.movement_date = movement_date or datetime.now(timezone.utc)
         self.created_at = created_at
         self.updated_at = updated_at
@@ -46,12 +46,8 @@ class Cashbox:
             "amount": self.amount
         }
         
-        # Solo incluir id_sale si existe
         if self.id_sale:
             data["id_sale"] = self.id_sale
             
-        # El trigger asignará automáticamente la sesión si no se proporciona
-        # El trigger calculará el balance automáticamente
-        # movement_date, created_at, updated_at los maneja la BD
         
         return data

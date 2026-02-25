@@ -13,13 +13,11 @@ class CashboxRepository:
         offset = (page - 1) * limit
 
         try:
-            # Preparar parámetros para el stored procedure
             params = {
                 "p_limit": limit,
                 "p_offset": offset
             }
 
-            # Agregar filtros opcionales solo si tienen valor
             if search:
                 params["p_search"] = search
             if session_id:
@@ -31,16 +29,13 @@ class CashboxRepository:
             if user_id:
                 params["p_user_id"] = user_id
 
-            # Llamar al stored procedure para obtener los datos
             response = self.db_client.rpc("get_cashboxes_cpr", params).execute()
 
             if not response.data:
                 return [], 0
 
-            # Enriquecer datos con información de usuarios
             enriched_data = self._enrich_with_user_data(response.data)
 
-            # Obtener el total con una consulta de conteo
             total = self._get_total_count(search, session_id, date_from, date_to, user_id)
 
             return enriched_data, total
@@ -57,7 +52,6 @@ class CashboxRepository:
             return []
 
         try:
-            # Obtener todos los user_ids únicos
             user_ids = list(set(
                 item.get('id_user')
                 for item in cashbox_data
@@ -67,18 +61,15 @@ class CashboxRepository:
             if not user_ids:
                 return cashbox_data
 
-            # Consultar usuarios en un solo query
             users_response = self.db_client.table('users').select(
                 'id_user, username, name, surname, email'
             ).in_('id_user', user_ids).execute()
 
-            # Crear diccionario de usuarios para lookup rápido
             users_dict = {
                 user['id_user']: user
                 for user in users_response.data
             }
 
-            # Enriquecer cada registro de cashbox
             for item in cashbox_data:
                 user_id = item.get('id_user')
                 if user_id and user_id in users_dict:
@@ -97,7 +88,6 @@ class CashboxRepository:
 
         except Exception as e:
             print(f"Error al enriquecer datos de usuario: {str(e)}")
-            # Si falla, retornar datos sin enriquecer
             return cashbox_data
 
     def _get_total_count(self, search: str = None, session_id: str = None,
@@ -109,13 +99,10 @@ class CashboxRepository:
         try:
             query = self.db_client.table('cashbox').select('id_cashbox', count='exact')
 
-            # JOIN con users si hay búsqueda (para buscar en name, surname, email)
             if search:
-                # Construir condiciones de búsqueda
                 search_conditions = f"concept.ilike.%{search}%,type.ilike.%{search}%"
                 query = query.or_(search_conditions)
 
-            # Aplicar filtros
             if session_id:
                 query = query.eq('id_session', session_id)
 

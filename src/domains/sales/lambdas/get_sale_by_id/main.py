@@ -1,8 +1,7 @@
-import json
-from use_cases.sale_use_case import SaleUseCase
+from core.use_case import SaleUseCase
+from core.repository import SaleRepository
 from utils.response_utils import ResponseUtils
 from decorators.lambda_decorators import cors_enabled, cognito_auth_required
-from repositories.sale_repository import SaleRepository
 from db.db_client import DBClient
 from load_initial_parameters import load_initial_parameters
 
@@ -23,7 +22,7 @@ def lambda_handler(event, context):
         if isinstance(id_sale, dict) and "statusCode" in id_sale:
             return id_sale
 
-        result = use_case.find_sale_by_id(id_sale)
+        result = use_case.get_sale_by_id(id_sale)
 
         return ResponseUtils.success_response({
             "data": result

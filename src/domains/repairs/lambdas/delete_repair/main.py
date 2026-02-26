@@ -1,16 +1,13 @@
-import json
-
-from use_cases.repair_use_case import RepairUseCase
+from core.use_case import RepairUseCase
+from core.repository import RepairRepository
 from utils.response_utils import ResponseUtils
 from decorators.lambda_decorators import cors_enabled, cognito_auth_required
-from repositories.repair_repository import RepairRepository
 from db.db_client import DBClient
 from load_initial_parameters import load_initial_parameters
 
 db_client = DBClient.get_client()
 repository = RepairRepository(db_client)
 use_case = RepairUseCase(repository)
-
 
 @cors_enabled
 @cognito_auth_required
@@ -27,7 +24,7 @@ def lambda_handler(event, context):
         result = use_case.delete_repair(id_repair)
 
         return ResponseUtils.success_response({
-            "message": "Reparación eliminado exitosamente",
+            "message": "Reparación eliminada exitosamente",
             "data": result
         })
 

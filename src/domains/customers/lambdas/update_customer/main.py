@@ -1,7 +1,7 @@
-from use_cases.customer_use_case import CustomerUseCase
+from core.use_case import CustomerUseCase
+from core.repository import CustomerRepository
 from utils.response_utils import ResponseUtils
 from decorators.lambda_decorators import cors_enabled, cognito_auth_required
-from repositories.customer_repository import CustomerRepository
 from db.db_client import DBClient
 from load_update_parameters import load_update_parameters
 

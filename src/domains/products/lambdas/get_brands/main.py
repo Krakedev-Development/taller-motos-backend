@@ -1,14 +1,12 @@
-import json
-import os
-from use_cases.brand_use_case import BrandUseCase
-from repositories.brand_repository import BrandRepository
+from core.use_case import ProductUseCase
+from core.repository import ProductRepository
 from decorators.lambda_decorators import cors_enabled, cognito_auth_required, debug_event
 from db.db_client import DBClient
 from utils.response_utils import ResponseUtils
 
 db_client = DBClient.get_client()
-repository = BrandRepository(db_client)
-use_case = BrandUseCase(repository)
+repository = ProductRepository(db_client)
+use_case = ProductUseCase(repository)
 
 @cors_enabled
 @cognito_auth_required
@@ -24,4 +22,4 @@ def lambda_handler(event, context):
         return ResponseUtils.success_response(result)
     except Exception as e:
         print(f"Error en GetBrands: {e}")
-        return ResponseUtils.success_response({"data": []})
+        return ResponseUtils.internal_server_error_response(f"Error al obtener marcas: {str(e)}")

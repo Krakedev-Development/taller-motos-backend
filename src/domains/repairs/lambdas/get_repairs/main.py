@@ -1,8 +1,8 @@
-from decorators.lambda_decorators import cors_enabled, cognito_auth_required , debug_event
+from core.use_case import RepairUseCase
+from core.repository import RepairRepository
+from decorators.lambda_decorators import cors_enabled, cognito_auth_required, debug_event
 from decorators.validate_pagination_and_search import validate_pagination_and_search
 from db.db_client import DBClient
-from repositories.repair_repository import RepairRepository
-from use_cases.repair_use_case import RepairUseCase
 from utils.response_utils import ResponseUtils
 
 db_client = DBClient.get_client()

@@ -1,9 +1,7 @@
-import json
-import logging
-from use_cases.sale_use_case import SaleUseCase
+from core.use_case import SaleUseCase
+from core.repository import SaleRepository
 from decorators.lambda_decorators import cors_enabled, cognito_auth_required, debug_event
 from decorators.validate_pagination_and_search import validate_pagination_and_search
-from repositories.sale_repository import SaleRepository
 from db.db_client import DBClient
 from utils.response_utils import ResponseUtils
 

@@ -1,8 +1,7 @@
-import json
-from use_cases.product_use_case import ProductUseCase
+from core.use_case import ProductUseCase
+from core.repository import ProductRepository
 from decorators.lambda_decorators import cors_enabled, cognito_auth_required, debug_event
 from decorators.validate_pagination_and_search import validate_pagination_and_search
-from repositories.product_repository import ProductRepository  
 from db.db_client import DBClient
 from utils.response_utils import ResponseUtils
 
@@ -28,6 +27,6 @@ def lambda_handler(event, context):
     page = max(1, page)
     limit = max(1, min(50, limit))
     
-    result = use_case.get_all_products(page, limit, search)
+    result = use_case.get_products(page, limit, search)
 
     return ResponseUtils.success_response(result)

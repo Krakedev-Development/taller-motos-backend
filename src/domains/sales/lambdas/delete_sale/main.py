@@ -1,9 +1,7 @@
-import json
-
-from use_cases.sale_use_case import SaleUseCase
+from core.use_case import SaleUseCase
+from core.repository import SaleRepository
 from utils.response_utils import ResponseUtils
 from decorators.lambda_decorators import cors_enabled, cognito_auth_required
-from repositories.sale_repository import SaleRepository
 from db.db_client import DBClient
 from load_initial_parameters import load_initial_parameters
 
@@ -27,7 +25,7 @@ def lambda_handler(event, context):
         result = use_case.delete_sale(id_sale)
 
         return ResponseUtils.success_response({
-            "message": "Cotización eliminado exitosamente",
+            "message": "Venta eliminada exitosamente",
             "data": result
         })
 

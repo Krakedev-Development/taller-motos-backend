@@ -1,5 +1,5 @@
-from repositories.sale_repository import SaleRepository
-from use_cases.sale_use_case import SaleUseCase
+from core.use_case import SaleUseCase
+from core.repository import SaleRepository
 from utils.response_utils import ResponseUtils
 from decorators.lambda_decorators import cors_enabled, cognito_auth_required
 from db.db_client import DBClient
@@ -24,10 +24,10 @@ def lambda_handler(event, context):
 
         id_sale, update_data = params
 
-        result = use_case.update_product(id_sale, update_data)
+        result = use_case.update_sale(id_sale, update_data)
 
         return ResponseUtils.success_response({
-            "message": "Cotización actualizado exitosamente",
+            "message": "Cotización actualizada exitosamente",
             "data": result
         })
 

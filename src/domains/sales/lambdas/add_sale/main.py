@@ -1,16 +1,13 @@
-import json
+from core.use_case import SaleUseCase
+from core.repository import SaleRepository
 from utils.response_utils import ResponseUtils
 from decorators.lambda_decorators import cors_enabled, cognito_auth_required
 from db.db_client import DBClient
 from load_initial_parameter import load_initial_parameters
-from repositories.sale_detail_repository import SaleDetailRepository
-from repositories.sale_repository import SaleRepository
-from use_cases.sale_use_case import SaleUseCase
 
 db_client = DBClient.get_client()
-sale_repository = SaleRepository(db_client)
-sale_detail_repository = SaleDetailRepository(db_client)
-use_case = SaleUseCase(sale_repository, sale_detail_repository)
+repository = SaleRepository(db_client)
+use_case = SaleUseCase(repository)
 
 @cors_enabled
 @cognito_auth_required

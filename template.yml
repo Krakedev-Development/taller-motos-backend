@@ -176,8 +176,8 @@ Resources:
       FunctionName: !Sub "GetCustomersApi-${Environment}"
       Layers:
         - !Ref SharedLayer
-      CodeUri: src/domains/customers/lambdas/get_customers
-      Handler: main.lambda_handler
+      CodeUri: src/domains/customers/
+      Handler: lambdas/get_customers/main.lambda_handler
       Role: !GetAtt LambdaExecutionRole.Arn
       Environment:
         Variables:
@@ -216,8 +216,8 @@ Resources:
       FunctionName: !Sub "GetCustomerByIdApi-${Environment}"
       Layers:
         - !Ref SharedLayer
-      CodeUri: src/domains/customers/lambdas/get_customer_by_id
-      Handler: main.lambda_handler
+      CodeUri: src/domains/customers/
+      Handler: lambdas/get_customer_by_id/main.lambda_handler
       Role: !GetAtt LambdaExecutionRole.Arn
       Environment:
         Variables:
@@ -248,8 +248,8 @@ Resources:
       FunctionName: !Sub "AddCustomerApi-${Environment}"
       Layers:
         - !Ref SharedLayer
-      CodeUri: src/domains/customers/lambdas/add_customer
-      Handler: main.lambda_handler
+      CodeUri: src/domains/customers/
+      Handler: lambdas/add_customer/main.lambda_handler
       Role: !GetAtt LambdaExecutionRole.Arn
       Environment:
         Variables:
@@ -288,8 +288,8 @@ Resources:
       FunctionName: !Sub "UpdateCustomerApi-${Environment}"
       Layers:
         - !Ref SharedLayer
-      CodeUri: src/domains/customers/lambdas/update_customer
-      Handler: main.lambda_handler
+      CodeUri: src/domains/customers/
+      Handler: lambdas/update_customer/main.lambda_handler
       Role: !GetAtt LambdaExecutionRole.Arn
       Environment:
         Variables:
@@ -320,8 +320,8 @@ Resources:
       FunctionName: !Sub "DeleteCustomerApi-${Environment}"
       Layers:
         - !Ref SharedLayer
-      CodeUri: src/domains/customers/lambdas/delete_customer
-      Handler: main.lambda_handler
+      CodeUri: src/domains/customers/
+      Handler: lambdas/delete_customer/main.lambda_handler
       Role: !GetAtt LambdaExecutionRole.Arn
       Environment:
         Variables:
@@ -355,8 +355,8 @@ Resources:
       FunctionName: !Sub "GetRepairsApi-${Environment}"
       Layers:
         - !Ref SharedLayer
-      CodeUri: src/domains/repairs/lambdas/get_repairs
-      Handler: main.lambda_handler
+      CodeUri: src/domains/repairs/
+      Handler: lambdas/get_repairs/main.lambda_handler
       Role: !GetAtt LambdaExecutionRole.Arn
       Environment:
         Variables:
@@ -395,8 +395,8 @@ Resources:
       FunctionName: !Sub "GetRepairByIdApi-${Environment}"
       Layers:
         - !Ref SharedLayer
-      CodeUri: src/domains/repairs/lambdas/get_repair_by_id
-      Handler: main.lambda_handler
+      CodeUri: src/domains/repairs/
+      Handler: lambdas/get_repair_by_id/main.lambda_handler
       Role: !GetAtt LambdaExecutionRole.Arn
       Environment:
         Variables:
@@ -427,8 +427,8 @@ Resources:
       FunctionName: !Sub "AddRepairApi-${Environment}"
       Layers:
         - !Ref SharedLayer
-      CodeUri: src/domains/repairs/lambdas/add_repair
-      Handler: main.lambda_handler
+      CodeUri: src/domains/repairs/
+      Handler: lambdas/add_repair/main.lambda_handler
       Role: !GetAtt LambdaExecutionRole.Arn
       Environment:
         Variables:
@@ -467,8 +467,8 @@ Resources:
       FunctionName: !Sub "UpdateRepairApi-${Environment}"
       Layers:
         - !Ref SharedLayer
-      CodeUri: src/domains/repairs/lambdas/update_repair
-      Handler: main.lambda_handler
+      CodeUri: src/domains/repairs/
+      Handler: lambdas/update_repair/main.lambda_handler
       Role: !GetAtt LambdaExecutionRole.Arn
       Environment:
         Variables:
@@ -499,8 +499,8 @@ Resources:
       FunctionName: !Sub "DeleteRepairApi-${Environment}"
       Layers:
         - !Ref SharedLayer
-      CodeUri: src/domains/repairs/lambdas/delete_repair
-      Handler: main.lambda_handler
+      CodeUri: src/domains/repairs/
+      Handler: lambdas/delete_repair/main.lambda_handler
       Role: !GetAtt LambdaExecutionRole.Arn
       Environment:
         Variables:
@@ -534,8 +534,8 @@ Resources:
       FunctionName: !Sub "GetMechanicsApi-${Environment}"
       Layers:
         - !Ref SharedLayer
-      CodeUri: src/domains/mechanics/lambdas/get_mechanics
-      Handler: main.lambda_handler
+      CodeUri: src/domains/mechanics/
+      Handler: lambdas/get_mechanics/main.lambda_handler
       Role: !GetAtt LambdaExecutionRole.Arn
       Environment:
         Variables:
@@ -574,8 +574,8 @@ Resources:
       FunctionName: !Sub "GetMechanicByIdApi-${Environment}"
       Layers:
         - !Ref SharedLayer
-      CodeUri: src/domains/mechanics/lambdas/get_mechanic_by_id
-      Handler: main.lambda_handler
+      CodeUri: src/domains/mechanics/
+      Handler: lambdas/get_mechanic_by_id/main.lambda_handler
       Role: !GetAtt LambdaExecutionRole.Arn
       Environment:
         Variables:
@@ -606,8 +606,8 @@ Resources:
       FunctionName: !Sub "AddMechanicApi-${Environment}"
       Layers:
         - !Ref SharedLayer
-      CodeUri: src/domains/mechanics/lambdas/add_mechanic
-      Handler: main.lambda_handler
+      CodeUri: src/domains/mechanics/
+      Handler: lambdas/add_mechanic/main.lambda_handler
       Role: !GetAtt LambdaExecutionRole.Arn
       Environment:
         Variables:
@@ -646,8 +646,8 @@ Resources:
       FunctionName: !Sub "UpdateMechanicApi-${Environment}"
       Layers:
         - !Ref SharedLayer
-      CodeUri: src/domains/mechanics/lambdas/update_mechanic
-      Handler: main.lambda_handler
+      CodeUri: src/domains/mechanics/
+      Handler: lambdas/update_mechanic/main.lambda_handler
       Role: !GetAtt LambdaExecutionRole.Arn
       Environment:
         Variables:
@@ -678,8 +678,8 @@ Resources:
       FunctionName: !Sub "DeleteMechanicApi-${Environment}"
       Layers:
         - !Ref SharedLayer
-      CodeUri: src/domains/mechanics/lambdas/delete_mechanic
-      Handler: main.lambda_handler
+      CodeUri: src/domains/mechanics/
+      Handler: lambdas/delete_mechanic/main.lambda_handler
       Role: !GetAtt LambdaExecutionRole.Arn
       Environment:
         Variables:
@@ -713,8 +713,8 @@ Resources:
       FunctionName: !Sub "GetProductsApi-${Environment}"
       Layers:
         - !Ref SharedLayer
-      CodeUri: src/domains/products/lambdas/get_products
-      Handler: main.lambda_handler
+      CodeUri: src/domains/products/
+      Handler: lambdas/get_products/main.lambda_handler
       Role: !GetAtt LambdaExecutionRole.Arn
       Environment:
         Variables:
@@ -753,8 +753,8 @@ Resources:
       FunctionName: !Sub "GetProductByIdApi-${Environment}"
       Layers:
         - !Ref SharedLayer
-      CodeUri: src/domains/products/lambdas/get_product_by_id
-      Handler: main.lambda_handler
+      CodeUri: src/domains/products/
+      Handler: lambdas/get_product_by_id/main.lambda_handler
       Role: !GetAtt LambdaExecutionRole.Arn
       Environment:
         Variables:
@@ -793,8 +793,8 @@ Resources:
       FunctionName: !Sub "AddProductApi-${Environment}"
       Layers:
         - !Ref SharedLayer
-      CodeUri: src/domains/products/lambdas/add_product
-      Handler: main.lambda_handler
+      CodeUri: src/domains/products/
+      Handler: lambdas/add_product/main.lambda_handler
       Role: !GetAtt LambdaExecutionRole.Arn
       Environment:
         Variables:
@@ -833,8 +833,8 @@ Resources:
       FunctionName: !Sub "UpdateProductApi-${Environment}"
       Layers:
         - !Ref SharedLayer
-      CodeUri: src/domains/products/lambdas/update_product
-      Handler: main.lambda_handler
+      CodeUri: src/domains/products/
+      Handler: lambdas/update_product/main.lambda_handler
       Role: !GetAtt LambdaExecutionRole.Arn
       Environment:
         Variables:
@@ -865,8 +865,8 @@ Resources:
       FunctionName: !Sub "DeleteProductApi-${Environment}"
       Layers:
         - !Ref SharedLayer
-      CodeUri: src/domains/products/lambdas/delete_product
-      Handler: main.lambda_handler
+      CodeUri: src/domains/products/
+      Handler: lambdas/delete_product/main.lambda_handler
       Role: !GetAtt LambdaExecutionRole.Arn
       Environment:
         Variables:
@@ -1360,8 +1360,8 @@ Resources:
       FunctionName: !Sub "GetSalesApi-${Environment}"
       Layers:
         - !Ref SharedLayer
-      CodeUri: src/domains/sales/lambdas/get_sales
-      Handler: main.lambda_handler
+      CodeUri: src/domains/sales/
+      Handler: lambdas/get_sales/main.lambda_handler
       Role: !GetAtt LambdaExecutionRole.Arn
       Environment:
         Variables:
@@ -1400,8 +1400,8 @@ Resources:
       FunctionName: !Sub "GetSaleByIdApi-${Environment}"
       Layers:
         - !Ref SharedLayer
-      CodeUri: src/domains/sales/lambdas/get_sale_by_id
-      Handler: main.lambda_handler
+      CodeUri: src/domains/sales/
+      Handler: lambdas/get_sale_by_id/main.lambda_handler
       Role: !GetAtt LambdaExecutionRole.Arn
       Environment:
         Variables:
@@ -1432,8 +1432,8 @@ Resources:
       FunctionName: !Sub "AddSaleApi-${Environment}"
       Layers:
         - !Ref SharedLayer
-      CodeUri: src/domains/sales/lambdas/add_sale
-      Handler: main.lambda_handler
+      CodeUri: src/domains/sales/
+      Handler: lambdas/add_sale/main.lambda_handler
       Role: !GetAtt LambdaExecutionRole.Arn
       Environment:
         Variables:
@@ -1472,8 +1472,8 @@ Resources:
       FunctionName: !Sub "UpdateSaleApi-${Environment}"
       Layers:
         - !Ref SharedLayer
-      CodeUri: src/domains/sales/lambdas/update_sale
-      Handler: main.lambda_handler
+      CodeUri: src/domains/sales/
+      Handler: lambdas/update_sale/main.lambda_handler
       Role: !GetAtt LambdaExecutionRole.Arn
       Environment:
         Variables:
@@ -1504,8 +1504,8 @@ Resources:
       FunctionName: !Sub "DeleteSaleApi-${Environment}"
       Layers:
         - !Ref SharedLayer
-      CodeUri: src/domains/sales/lambdas/delete_sale
-      Handler: main.lambda_handler
+      CodeUri: src/domains/sales/
+      Handler: lambdas/delete_sale/main.lambda_handler
       Role: !GetAtt LambdaExecutionRole.Arn
       Environment:
         Variables:
@@ -1536,8 +1536,8 @@ Resources:
       FunctionName: !Sub "GetPaymentMethodsApi-${Environment}"
       Layers:
         - !Ref SharedLayer
-      CodeUri: src/domains/sales/lambdas/get_payment_methods
-      Handler: main.lambda_handler
+      CodeUri: src/domains/sales/
+      Handler: lambdas/get_payment_methods/main.lambda_handler
       Role: !GetAtt LambdaExecutionRole.Arn
       Environment:
         Variables:
@@ -1575,8 +1575,8 @@ Resources:
       FunctionName: !Sub "GetCategoriesApi-${Environment}"
       Layers:
         - !Ref SharedLayer
-      CodeUri: src/domains/products/lambdas/get_categories
-      Handler: main.lambda_handler
+      CodeUri: src/domains/products/
+      Handler: lambdas/get_categories/main.lambda_handler
       Role: !GetAtt LambdaExecutionRole.Arn
       Environment:
         Variables:
@@ -1612,8 +1612,8 @@ Resources:
       FunctionName: !Sub "GetBrandsApi-${Environment}"
       Layers:
         - !Ref SharedLayer
-      CodeUri: src/domains/products/lambdas/get_brands
-      Handler: main.lambda_handler
+      CodeUri: src/domains/products/
+      Handler: lambdas/get_brands/main.lambda_handler
       Role: !GetAtt LambdaExecutionRole.Arn
       Environment:
         Variables:

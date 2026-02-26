@@ -1,8 +1,7 @@
-import json
-from use_cases.repair_use_case import RepairUseCase
+from core.use_case import RepairUseCase
+from core.repository import RepairRepository
 from utils.response_utils import ResponseUtils
 from decorators.lambda_decorators import cors_enabled, cognito_auth_required
-from repositories.repair_repository import RepairRepository
 from db.db_client import DBClient
 from load_initial_parameters import load_initial_parameters
 
@@ -23,7 +22,7 @@ def lambda_handler(event, context):
         if isinstance(id_repair, dict) and "statusCode" in id_repair:
             return id_repair
 
-        result = use_case.find_repair_by_id(id_repair)
+        result = use_case.get_repair_by_id(id_repair)
 
         return ResponseUtils.success_response({
             "data": result

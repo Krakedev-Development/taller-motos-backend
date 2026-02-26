@@ -1,9 +1,7 @@
-import json
-
-from use_cases.product_use_case import ProductUseCase
+from core.use_case import ProductUseCase
+from core.repository import ProductRepository
 from utils.response_utils import ResponseUtils
 from decorators.lambda_decorators import cors_enabled, cognito_auth_required
-from repositories.product_repository import ProductRepository
 from db.db_client import DBClient
 from load_delete_parameters import load_delete_parameters
 

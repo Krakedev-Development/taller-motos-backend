@@ -59,3 +59,7 @@ lambda_function_payload.json
 
 # Ignore macOS system files
 .DS_Store
+
+# Local environment and security reports
+env.json
+REPORTE_SEGURIDAD*

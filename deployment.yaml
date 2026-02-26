@@ -1,0 +1,1768 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: Backend en Python con Lambdas y API Gateway
+Globals:
+  Function:
+    Timeout: 10
+    Runtime: python3.12
+    MemorySize: 256
+    Environment:
+      Variables:
+        CORS_ORIGIN: '*'
+  Api:
+    Cors:
+      AllowMethods: "'DELETE,GET,HEAD,OPTIONS,PATCH,POST,PUT'"
+      AllowHeaders: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token,X-Requested-With'"
+      AllowOrigin: "'*'"
+      MaxAge: "'600'"
+Parameters:
+  Environment:
+    Type: String
+    Default: prod
+    AllowedValues:
+    - dev
+    - stage
+    - prod
+  DBUrl:
+    Type: String
+    Default: https://toklwbqrgqsgaovzleev.supabase.co
+  DBKey:
+    Type: String
+    Default: sb_publishable_9ToFd0mY6_QhXaGecuwxQA_ixnC9hQ0
+  LogRetentionDays:
+    Type: Number
+    Default: 14
+Resources:
+  LambdaExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+        - Effect: Allow
+          Principal:
+            Service: lambda.amazonaws.com
+          Action: sts:AssumeRole
+      ManagedPolicyArns:
+      - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+  MyApi:
+    Type: AWS::Serverless::Api
+    Properties:
+      StageName:
+        Ref: Environment
+      Auth:
+        Authorizers:
+          CognitoAuthorizer:
+            UserPoolArn:
+              Fn::GetAtt:
+              - MotorcycleRepairShopUserPool
+              - Arn
+      Cors:
+        AllowMethods: "'OPTIONS,GET,POST,PUT,DELETE'"
+        AllowHeaders: "'Content-Type,Authorization,X-Amz-Date,X-Amz-Security-Token'"
+        AllowOrigin: "'*'"
+  MotorcycleRepairShopUserPool:
+    Type: AWS::Cognito::UserPool
+    Properties:
+      UserPoolName: motorcycle-repair-shop-user-pool
+      AutoVerifiedAttributes:
+      - email
+      UsernameAttributes:
+      - email
+      Policies:
+        PasswordPolicy:
+          MinimumLength: 8
+          RequireUppercase: true
+          RequireLowercase: true
+          RequireNumbers: true
+          RequireSymbols: false
+  MyUserPoolDomain:
+    Type: AWS::Cognito::UserPoolDomain
+    Properties:
+      Domain: motorcycle-repair-auth
+      UserPoolId:
+        Ref: MotorcycleRepairShopUserPool
+    DependsOn: MotorcycleRepairShopUserPool
+  MotorcycleRepairShopResourceServer:
+    Type: AWS::Cognito::UserPoolResourceServer
+    Properties:
+      UserPoolId:
+        Ref: MotorcycleRepairShopUserPool
+      Identifier: motorcycerepairshop-api
+      Name: Motorcycle Repair Shop API
+      Scopes:
+      - ScopeName: create
+        ScopeDescription: Create access
+      - ScopeName: read
+        ScopeDescription: Read access
+      - ScopeName: update
+        ScopeDescription: Update access
+      - ScopeName: delete
+        ScopeDescription: Delete access
+    DependsOn: MotorcycleRepairShopUserPool
+  MotorcycleRepairShopUserPoolClient:
+    Type: AWS::Cognito::UserPoolClient
+    Properties:
+      ClientName: motorcycle-repair-shop-client
+      UserPoolId:
+        Ref: MotorcycleRepairShopUserPool
+      GenerateSecret: true
+      AllowedOAuthFlows:
+      - client_credentials
+      AllowedOAuthFlowsUserPoolClient: true
+      AllowedOAuthScopes:
+      - Fn::Sub: motorcycerepairshop-api/create
+      - Fn::Sub: motorcycerepairshop-api/read
+      - Fn::Sub: motorcycerepairshop-api/update
+      - Fn::Sub: motorcycerepairshop-api/delete
+    DependsOn:
+    - MotorcycleRepairShopUserPool
+    - MotorcycleRepairShopResourceServer
+    - MyUserPoolDomain
+  SharedLayer:
+    Type: AWS::Serverless::LayerVersion
+    Properties:
+      LayerName: shared-layer
+      Description: Shared utilities for Lambdas
+      ContentUri: s3://aws-sam-cli-managed-default-samclisourcebucket-onon5eakfl9a/5f7874695fc783950f0953e0bbd16b16
+      CompatibleRuntimes:
+      - python3.12
+    Metadata:
+      BuildMethod: python3.12
+      BuildProperties:
+        PIP_REQUIREMENTS: requirements.txt
+  GetCustomersApiFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName:
+        Fn::Sub: GetCustomersApi-${Environment}
+      Layers:
+      - Ref: SharedLayer
+      CodeUri: s3://aws-sam-cli-managed-default-samclisourcebucket-onon5eakfl9a/d29bca1834d9fcf69f143652183292ae
+      Handler: main.lambda_handler
+      Role:
+        Fn::GetAtt:
+        - LambdaExecutionRole
+        - Arn
+      Environment:
+        Variables:
+          DB_URL:
+            Ref: DBUrl
+          DB_KEY:
+            Ref: DBKey
+          COGNITO_USER_POOL_ID:
+            Ref: MotorcycleRepairShopUserPool
+          COGNITO_APP_CLIENT_ID:
+            Ref: MotorcycleRepairShopUserPoolClient
+          COGNITO_DOMAIN: motorcycle-repair-shop-user-pool
+      Events:
+        ApiEvent:
+          Type: Api
+          Properties:
+            RestApiId:
+              Ref: MyApi
+            Path: /customers
+            Method: get
+            Auth:
+              Authorizer: CognitoAuthorizer
+              AuthorizationScopes:
+              - motorcycerepairshop-api/read
+  GetCustomersApiLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName:
+        Fn::Sub: /aws/lambda/GetCustomersApi-${Environment}
+      RetentionInDays:
+        Ref: LogRetentionDays
+    DeletionPolicy: Retain
+    DependsOn: GetCustomersApiFunction
+  GetCustomerByIdApiFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName:
+        Fn::Sub: GetCustomerByIdApi-${Environment}
+      Layers:
+      - Ref: SharedLayer
+      CodeUri: s3://aws-sam-cli-managed-default-samclisourcebucket-onon5eakfl9a/9c2dd94b11d709e8243f708401e26847
+      Handler: main.lambda_handler
+      Role:
+        Fn::GetAtt:
+        - LambdaExecutionRole
+        - Arn
+      Environment:
+        Variables:
+          DB_URL:
+            Ref: DBUrl
+          DB_KEY:
+            Ref: DBKey
+          COGNITO_USER_POOL_ID:
+            Ref: MotorcycleRepairShopUserPool
+          COGNITO_APP_CLIENT_ID:
+            Ref: MotorcycleRepairShopUserPoolClient
+          COGNITO_DOMAIN: motorcycle-repair-shop-user-pool
+      Events:
+        ApiEvent:
+          Type: Api
+          Properties:
+            RestApiId:
+              Ref: MyApi
+            Path: /customers/{id}
+            Method: get
+            Auth:
+              Authorizer: CognitoAuthorizer
+              AuthorizationScopes:
+              - motorcycerepairshop-api/read
+  AddCustomerApiFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName:
+        Fn::Sub: AddCustomerApi-${Environment}
+      Layers:
+      - Ref: SharedLayer
+      CodeUri: s3://aws-sam-cli-managed-default-samclisourcebucket-onon5eakfl9a/3bf2d5fd7f489a605a6e48c3e4960b6e
+      Handler: main.lambda_handler
+      Role:
+        Fn::GetAtt:
+        - LambdaExecutionRole
+        - Arn
+      Environment:
+        Variables:
+          DB_URL:
+            Ref: DBUrl
+          DB_KEY:
+            Ref: DBKey
+          COGNITO_USER_POOL_ID:
+            Ref: MotorcycleRepairShopUserPool
+          COGNITO_APP_CLIENT_ID:
+            Ref: MotorcycleRepairShopUserPoolClient
+          COGNITO_DOMAIN: motorcycle-repair-shop-user-pool
+      Events:
+        ApiEvent:
+          Type: Api
+          Properties:
+            RestApiId:
+              Ref: MyApi
+            Path: /customers
+            Method: post
+            Auth:
+              Authorizer: CognitoAuthorizer
+              AuthorizationScopes:
+              - motorcycerepairshop-api/create
+  AddCustomerApiLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName:
+        Fn::Sub: /aws/lambda/AddCustomerApi-${Environment}
+      RetentionInDays:
+        Ref: LogRetentionDays
+    DeletionPolicy: Retain
+    DependsOn: AddCustomerApiFunction
+  UpdateCustomerApiFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName:
+        Fn::Sub: UpdateCustomerApi-${Environment}
+      Layers:
+      - Ref: SharedLayer
+      CodeUri: s3://aws-sam-cli-managed-default-samclisourcebucket-onon5eakfl9a/9712c3f035ff25db54aebbd49249b58f
+      Handler: main.lambda_handler
+      Role:
+        Fn::GetAtt:
+        - LambdaExecutionRole
+        - Arn
+      Environment:
+        Variables:
+          DB_URL:
+            Ref: DBUrl
+          DB_KEY:
+            Ref: DBKey
+          COGNITO_USER_POOL_ID:
+            Ref: MotorcycleRepairShopUserPool
+          COGNITO_APP_CLIENT_ID:
+            Ref: MotorcycleRepairShopUserPoolClient
+          COGNITO_DOMAIN: motorcycle-repair-shop-user-pool
+      Events:
+        ApiEvent:
+          Type: Api
+          Properties:
+            RestApiId:
+              Ref: MyApi
+            Path: /customers/{id}
+            Method: put
+            Auth:
+              Authorizer: CognitoAuthorizer
+              AuthorizationScopes:
+              - motorcycerepairshop-api/update
+  DeleteCustomerApiFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName:
+        Fn::Sub: DeleteCustomerApi-${Environment}
+      Layers:
+      - Ref: SharedLayer
+      CodeUri: s3://aws-sam-cli-managed-default-samclisourcebucket-onon5eakfl9a/347be68587328382df5cb05030c14489
+      Handler: main.lambda_handler
+      Role:
+        Fn::GetAtt:
+        - LambdaExecutionRole
+        - Arn
+      Environment:
+        Variables:
+          DB_URL:
+            Ref: DBUrl
+          DB_KEY:
+            Ref: DBKey
+          COGNITO_USER_POOL_ID:
+            Ref: MotorcycleRepairShopUserPool
+          COGNITO_APP_CLIENT_ID:
+            Ref: MotorcycleRepairShopUserPoolClient
+          COGNITO_DOMAIN: motorcycle-repair-shop-user-pool
+      Events:
+        ApiEvent:
+          Type: Api
+          Properties:
+            RestApiId:
+              Ref: MyApi
+            Path: /customers/{id}
+            Method: delete
+            Auth:
+              Authorizer: CognitoAuthorizer
+              AuthorizationScopes:
+              - motorcycerepairshop-api/delete
+  GetRepairsApiFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName:
+        Fn::Sub: GetRepairsApi-${Environment}
+      Layers:
+      - Ref: SharedLayer
+      CodeUri: s3://aws-sam-cli-managed-default-samclisourcebucket-onon5eakfl9a/caaccced3db654294759454b93093f07
+      Handler: main.lambda_handler
+      Role:
+        Fn::GetAtt:
+        - LambdaExecutionRole
+        - Arn
+      Environment:
+        Variables:
+          DB_URL:
+            Ref: DBUrl
+          DB_KEY:
+            Ref: DBKey
+          COGNITO_USER_POOL_ID:
+            Ref: MotorcycleRepairShopUserPool
+          COGNITO_APP_CLIENT_ID:
+            Ref: MotorcycleRepairShopUserPoolClient
+          COGNITO_DOMAIN: motorcycle-repair-shop-user-pool
+      Events:
+        ApiEvent:
+          Type: Api
+          Properties:
+            RestApiId:
+              Ref: MyApi
+            Path: /repairs
+            Method: get
+            Auth:
+              Authorizer: CognitoAuthorizer
+              AuthorizationScopes:
+              - motorcycerepairshop-api/read
+  GetRepairsApiLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName:
+        Fn::Sub: /aws/lambda/GetRepairsApi-${Environment}
+      RetentionInDays:
+        Ref: LogRetentionDays
+    DeletionPolicy: Retain
+    DependsOn: GetRepairsApiFunction
+  GetRepairByIdApiFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName:
+        Fn::Sub: GetRepairByIdApi-${Environment}
+      Layers:
+      - Ref: SharedLayer
+      CodeUri: s3://aws-sam-cli-managed-default-samclisourcebucket-onon5eakfl9a/597eda4f1dd12cd3e056a3bf6a8dd16c
+      Handler: main.lambda_handler
+      Role:
+        Fn::GetAtt:
+        - LambdaExecutionRole
+        - Arn
+      Environment:
+        Variables:
+          DB_URL:
+            Ref: DBUrl
+          DB_KEY:
+            Ref: DBKey
+          COGNITO_USER_POOL_ID:
+            Ref: MotorcycleRepairShopUserPool
+          COGNITO_APP_CLIENT_ID:
+            Ref: MotorcycleRepairShopUserPoolClient
+          COGNITO_DOMAIN: motorcycle-repair-shop-user-pool
+      Events:
+        ApiEvent:
+          Type: Api
+          Properties:
+            RestApiId:
+              Ref: MyApi
+            Path: /repairs/{id}
+            Method: get
+            Auth:
+              Authorizer: CognitoAuthorizer
+              AuthorizationScopes:
+              - motorcycerepairshop-api/read
+  AddRepairApiFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName:
+        Fn::Sub: AddRepairApi-${Environment}
+      Layers:
+      - Ref: SharedLayer
+      CodeUri: s3://aws-sam-cli-managed-default-samclisourcebucket-onon5eakfl9a/be9bde37c097c9f1694e6be1901987cb
+      Handler: main.lambda_handler
+      Role:
+        Fn::GetAtt:
+        - LambdaExecutionRole
+        - Arn
+      Environment:
+        Variables:
+          DB_URL:
+            Ref: DBUrl
+          DB_KEY:
+            Ref: DBKey
+          COGNITO_USER_POOL_ID:
+            Ref: MotorcycleRepairShopUserPool
+          COGNITO_APP_CLIENT_ID:
+            Ref: MotorcycleRepairShopUserPoolClient
+          COGNITO_DOMAIN: motorcycle-repair-shop-user-pool
+      Events:
+        ApiEvent:
+          Type: Api
+          Properties:
+            RestApiId:
+              Ref: MyApi
+            Path: /repairs
+            Method: post
+            Auth:
+              Authorizer: CognitoAuthorizer
+              AuthorizationScopes:
+              - motorcycerepairshop-api/create
+  AddRepairApiLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName:
+        Fn::Sub: /aws/lambda/AddRepairApi-${Environment}
+      RetentionInDays:
+        Ref: LogRetentionDays
+    DeletionPolicy: Retain
+    DependsOn: AddRepairApiFunction
+  UpdateRepairApiFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName:
+        Fn::Sub: UpdateRepairApi-${Environment}
+      Layers:
+      - Ref: SharedLayer
+      CodeUri: s3://aws-sam-cli-managed-default-samclisourcebucket-onon5eakfl9a/effdc589a1b406b9229008ac4d5e11db
+      Handler: main.lambda_handler
+      Role:
+        Fn::GetAtt:
+        - LambdaExecutionRole
+        - Arn
+      Environment:
+        Variables:
+          DB_URL:
+            Ref: DBUrl
+          DB_KEY:
+            Ref: DBKey
+          COGNITO_USER_POOL_ID:
+            Ref: MotorcycleRepairShopUserPool
+          COGNITO_APP_CLIENT_ID:
+            Ref: MotorcycleRepairShopUserPoolClient
+          COGNITO_DOMAIN: motorcycle-repair-shop-user-pool
+      Events:
+        ApiEvent:
+          Type: Api
+          Properties:
+            RestApiId:
+              Ref: MyApi
+            Path: /repairs/{id}
+            Method: put
+            Auth:
+              Authorizer: CognitoAuthorizer
+              AuthorizationScopes:
+              - motorcycerepairshop-api/update
+  DeleteRepairApiFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName:
+        Fn::Sub: DeleteRepairApi-${Environment}
+      Layers:
+      - Ref: SharedLayer
+      CodeUri: s3://aws-sam-cli-managed-default-samclisourcebucket-onon5eakfl9a/f21b6c025f12e3634e1b9b0fe85a04e0
+      Handler: main.lambda_handler
+      Role:
+        Fn::GetAtt:
+        - LambdaExecutionRole
+        - Arn
+      Environment:
+        Variables:
+          DB_URL:
+            Ref: DBUrl
+          DB_KEY:
+            Ref: DBKey
+          COGNITO_USER_POOL_ID:
+            Ref: MotorcycleRepairShopUserPool
+          COGNITO_APP_CLIENT_ID:
+            Ref: MotorcycleRepairShopUserPoolClient
+          COGNITO_DOMAIN: motorcycle-repair-shop-user-pool
+      Events:
+        ApiEvent:
+          Type: Api
+          Properties:
+            RestApiId:
+              Ref: MyApi
+            Path: /repairs/{id}
+            Method: delete
+            Auth:
+              Authorizer: CognitoAuthorizer
+              AuthorizationScopes:
+              - motorcycerepairshop-api/delete
+  GetMechanicsApiFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName:
+        Fn::Sub: GetMechanicsApi-${Environment}
+      Layers:
+      - Ref: SharedLayer
+      CodeUri: s3://aws-sam-cli-managed-default-samclisourcebucket-onon5eakfl9a/4c2b99b234edfaa7d90e7c8507a6d5a2
+      Handler: main.lambda_handler
+      Role:
+        Fn::GetAtt:
+        - LambdaExecutionRole
+        - Arn
+      Environment:
+        Variables:
+          DB_URL:
+            Ref: DBUrl
+          DB_KEY:
+            Ref: DBKey
+          COGNITO_USER_POOL_ID:
+            Ref: MotorcycleRepairShopUserPool
+          COGNITO_APP_CLIENT_ID:
+            Ref: MotorcycleRepairShopUserPoolClient
+          COGNITO_DOMAIN: motorcycle-repair-shop-user-pool
+      Events:
+        ApiEvent:
+          Type: Api
+          Properties:
+            RestApiId:
+              Ref: MyApi
+            Path: /mechanics
+            Method: get
+            Auth:
+              Authorizer: CognitoAuthorizer
+              AuthorizationScopes:
+              - motorcycerepairshop-api/read
+  GetMechanicsApiLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName:
+        Fn::Sub: /aws/lambda/GetMechanicsApi-${Environment}
+      RetentionInDays:
+        Ref: LogRetentionDays
+    DeletionPolicy: Retain
+    DependsOn: GetMechanicsApiFunction
+  GetMechanicByIdApiFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName:
+        Fn::Sub: GetMechanicByIdApi-${Environment}
+      Layers:
+      - Ref: SharedLayer
+      CodeUri: s3://aws-sam-cli-managed-default-samclisourcebucket-onon5eakfl9a/4b3c319b210c015caed836588604caaf
+      Handler: main.lambda_handler
+      Role:
+        Fn::GetAtt:
+        - LambdaExecutionRole
+        - Arn
+      Environment:
+        Variables:
+          DB_URL:
+            Ref: DBUrl
+          DB_KEY:
+            Ref: DBKey
+          COGNITO_USER_POOL_ID:
+            Ref: MotorcycleRepairShopUserPool
+          COGNITO_APP_CLIENT_ID:
+            Ref: MotorcycleRepairShopUserPoolClient
+          COGNITO_DOMAIN: motorcycle-repair-shop-user-pool
+      Events:
+        ApiEvent:
+          Type: Api
+          Properties:
+            RestApiId:
+              Ref: MyApi
+            Path: /mechanics/{id}
+            Method: get
+            Auth:
+              Authorizer: CognitoAuthorizer
+              AuthorizationScopes:
+              - motorcycerepairshop-api/read
+  AddMechanicApiFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName:
+        Fn::Sub: AddMechanicApi-${Environment}
+      Layers:
+      - Ref: SharedLayer
+      CodeUri: s3://aws-sam-cli-managed-default-samclisourcebucket-onon5eakfl9a/28228ffb328190e7a03f319ec4046713
+      Handler: main.lambda_handler
+      Role:
+        Fn::GetAtt:
+        - LambdaExecutionRole
+        - Arn
+      Environment:
+        Variables:
+          DB_URL:
+            Ref: DBUrl
+          DB_KEY:
+            Ref: DBKey
+          COGNITO_USER_POOL_ID:
+            Ref: MotorcycleRepairShopUserPool
+          COGNITO_APP_CLIENT_ID:
+            Ref: MotorcycleRepairShopUserPoolClient
+          COGNITO_DOMAIN: motorcycle-repair-shop-user-pool
+      Events:
+        ApiEvent:
+          Type: Api
+          Properties:
+            RestApiId:
+              Ref: MyApi
+            Path: /mechanics
+            Method: post
+            Auth:
+              Authorizer: CognitoAuthorizer
+              AuthorizationScopes:
+              - motorcycerepairshop-api/create
+  AddMechanicApiLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName:
+        Fn::Sub: /aws/lambda/AddMechanicApi-${Environment}
+      RetentionInDays:
+        Ref: LogRetentionDays
+    DeletionPolicy: Retain
+    DependsOn: AddMechanicApiFunction
+  UpdateMechanicApiFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName:
+        Fn::Sub: UpdateMechanicApi-${Environment}
+      Layers:
+      - Ref: SharedLayer
+      CodeUri: s3://aws-sam-cli-managed-default-samclisourcebucket-onon5eakfl9a/c150721373f9eb38143500b3aca2e324
+      Handler: main.lambda_handler
+      Role:
+        Fn::GetAtt:
+        - LambdaExecutionRole
+        - Arn
+      Environment:
+        Variables:
+          DB_URL:
+            Ref: DBUrl
+          DB_KEY:
+            Ref: DBKey
+          COGNITO_USER_POOL_ID:
+            Ref: MotorcycleRepairShopUserPool
+          COGNITO_APP_CLIENT_ID:
+            Ref: MotorcycleRepairShopUserPoolClient
+          COGNITO_DOMAIN: motorcycle-repair-shop-user-pool
+      Events:
+        ApiEvent:
+          Type: Api
+          Properties:
+            RestApiId:
+              Ref: MyApi
+            Path: /mechanics/{id}
+            Method: put
+            Auth:
+              Authorizer: CognitoAuthorizer
+              AuthorizationScopes:
+              - motorcycerepairshop-api/update
+  DeleteMechanicApiFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName:
+        Fn::Sub: DeleteMechanicApi-${Environment}
+      Layers:
+      - Ref: SharedLayer
+      CodeUri: s3://aws-sam-cli-managed-default-samclisourcebucket-onon5eakfl9a/4a08681fcec301213363522e4736f709
+      Handler: main.lambda_handler
+      Role:
+        Fn::GetAtt:
+        - LambdaExecutionRole
+        - Arn
+      Environment:
+        Variables:
+          DB_URL:
+            Ref: DBUrl
+          DB_KEY:
+            Ref: DBKey
+          COGNITO_USER_POOL_ID:
+            Ref: MotorcycleRepairShopUserPool
+          COGNITO_APP_CLIENT_ID:
+            Ref: MotorcycleRepairShopUserPoolClient
+          COGNITO_DOMAIN: motorcycle-repair-shop-user-pool
+      Events:
+        ApiEvent:
+          Type: Api
+          Properties:
+            RestApiId:
+              Ref: MyApi
+            Path: /mechanics/{id}
+            Method: delete
+            Auth:
+              Authorizer: CognitoAuthorizer
+              AuthorizationScopes:
+              - motorcycerepairshop-api/delete
+  GetProductsApiFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName:
+        Fn::Sub: GetProductsApi-${Environment}
+      Layers:
+      - Ref: SharedLayer
+      CodeUri: s3://aws-sam-cli-managed-default-samclisourcebucket-onon5eakfl9a/f232c45591b159f25a7d230242c6bace
+      Handler: main.lambda_handler
+      Role:
+        Fn::GetAtt:
+        - LambdaExecutionRole
+        - Arn
+      Environment:
+        Variables:
+          DB_URL:
+            Ref: DBUrl
+          DB_KEY:
+            Ref: DBKey
+          COGNITO_USER_POOL_ID:
+            Ref: MotorcycleRepairShopUserPool
+          COGNITO_APP_CLIENT_ID:
+            Ref: MotorcycleRepairShopUserPoolClient
+          COGNITO_DOMAIN: motorcycle-repair-shop-user-pool
+      Events:
+        ApiEvent:
+          Type: Api
+          Properties:
+            RestApiId:
+              Ref: MyApi
+            Path: /products
+            Method: get
+            Auth:
+              Authorizer: CognitoAuthorizer
+              AuthorizationScopes:
+              - motorcycerepairshop-api/read
+  GetProductsApiLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName:
+        Fn::Sub: /aws/lambda/GetProductsApi-${Environment}
+      RetentionInDays:
+        Ref: LogRetentionDays
+    DeletionPolicy: Retain
+    DependsOn: GetProductsApiFunction
+  GetProductByIdApiFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName:
+        Fn::Sub: GetProductByIdApi-${Environment}
+      Layers:
+      - Ref: SharedLayer
+      CodeUri: s3://aws-sam-cli-managed-default-samclisourcebucket-onon5eakfl9a/4f49265f727ffe89131a9d05c33cab3a
+      Handler: main.lambda_handler
+      Role:
+        Fn::GetAtt:
+        - LambdaExecutionRole
+        - Arn
+      Environment:
+        Variables:
+          DB_URL:
+            Ref: DBUrl
+          DB_KEY:
+            Ref: DBKey
+          COGNITO_USER_POOL_ID:
+            Ref: MotorcycleRepairShopUserPool
+          COGNITO_APP_CLIENT_ID:
+            Ref: MotorcycleRepairShopUserPoolClient
+          COGNITO_DOMAIN: motorcycle-repair-shop-user-pool
+      Events:
+        ApiEvent:
+          Type: Api
+          Properties:
+            RestApiId:
+              Ref: MyApi
+            Path: /products/{id}
+            Method: get
+            Auth:
+              Authorizer: CognitoAuthorizer
+              AuthorizationScopes:
+              - motorcycerepairshop-api/read
+  GetProductByIdApiLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName:
+        Fn::Sub: /aws/lambda/GetProductByIdApi-${Environment}
+      RetentionInDays:
+        Ref: LogRetentionDays
+    DeletionPolicy: Retain
+    DependsOn: GetProductByIdApiFunction
+  AddProductApiFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName:
+        Fn::Sub: AddProductApi-${Environment}
+      Layers:
+      - Ref: SharedLayer
+      CodeUri: s3://aws-sam-cli-managed-default-samclisourcebucket-onon5eakfl9a/98054ce47dfb0164a90fb03c95776e2b
+      Handler: main.lambda_handler
+      Role:
+        Fn::GetAtt:
+        - LambdaExecutionRole
+        - Arn
+      Environment:
+        Variables:
+          DB_URL:
+            Ref: DBUrl
+          DB_KEY:
+            Ref: DBKey
+          COGNITO_USER_POOL_ID:
+            Ref: MotorcycleRepairShopUserPool
+          COGNITO_APP_CLIENT_ID:
+            Ref: MotorcycleRepairShopUserPoolClient
+          COGNITO_DOMAIN: motorcycle-repair-shop-user-pool
+      Events:
+        ApiEvent:
+          Type: Api
+          Properties:
+            RestApiId:
+              Ref: MyApi
+            Path: /products
+            Method: post
+            Auth:
+              Authorizer: CognitoAuthorizer
+              AuthorizationScopes:
+              - motorcycerepairshop-api/create
+  AddProductApiLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName:
+        Fn::Sub: /aws/lambda/AddProductApi-${Environment}
+      RetentionInDays:
+        Ref: LogRetentionDays
+    DeletionPolicy: Retain
+    DependsOn: AddProductApiFunction
+  UpdateProductApiFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName:
+        Fn::Sub: UpdateProductApi-${Environment}
+      Layers:
+      - Ref: SharedLayer
+      CodeUri: s3://aws-sam-cli-managed-default-samclisourcebucket-onon5eakfl9a/892736b94d65015dd021a8f5a8e4746e
+      Handler: main.lambda_handler
+      Role:
+        Fn::GetAtt:
+        - LambdaExecutionRole
+        - Arn
+      Environment:
+        Variables:
+          DB_URL:
+            Ref: DBUrl
+          DB_KEY:
+            Ref: DBKey
+          COGNITO_USER_POOL_ID:
+            Ref: MotorcycleRepairShopUserPool
+          COGNITO_APP_CLIENT_ID:
+            Ref: MotorcycleRepairShopUserPoolClient
+          COGNITO_DOMAIN: motorcycle-repair-shop-user-pool
+      Events:
+        ApiEvent:
+          Type: Api
+          Properties:
+            RestApiId:
+              Ref: MyApi
+            Path: /products/{id}
+            Method: put
+            Auth:
+              Authorizer: CognitoAuthorizer
+              AuthorizationScopes:
+              - motorcycerepairshop-api/update
+  DeleteProductApiFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName:
+        Fn::Sub: DeleteProductApi-${Environment}
+      Layers:
+      - Ref: SharedLayer
+      CodeUri: s3://aws-sam-cli-managed-default-samclisourcebucket-onon5eakfl9a/11b8a0a2106c37ebe03a79494de574d1
+      Handler: main.lambda_handler
+      Role:
+        Fn::GetAtt:
+        - LambdaExecutionRole
+        - Arn
+      Environment:
+        Variables:
+          DB_URL:
+            Ref: DBUrl
+          DB_KEY:
+            Ref: DBKey
+          COGNITO_USER_POOL_ID:
+            Ref: MotorcycleRepairShopUserPool
+          COGNITO_APP_CLIENT_ID:
+            Ref: MotorcycleRepairShopUserPoolClient
+          COGNITO_DOMAIN: motorcycle-repair-shop-user-pool
+      Events:
+        ApiEvent:
+          Type: Api
+          Properties:
+            RestApiId:
+              Ref: MyApi
+            Path: /products/{id}
+            Method: delete
+            Auth:
+              Authorizer: CognitoAuthorizer
+              AuthorizationScopes:
+              - motorcycerepairshop-api/delete
+  GetCashboxApiFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName:
+        Fn::Sub: GetCashboxApi-${Environment}
+      Layers:
+      - Ref: SharedLayer
+      CodeUri: s3://aws-sam-cli-managed-default-samclisourcebucket-onon5eakfl9a/6af66b18499bfde509c54f2792596cbf
+      Handler: main.lambda_handler
+      Role:
+        Fn::GetAtt:
+        - LambdaExecutionRole
+        - Arn
+      Environment:
+        Variables:
+          DB_URL:
+            Ref: DBUrl
+          DB_KEY:
+            Ref: DBKey
+          COGNITO_USER_POOL_ID:
+            Ref: MotorcycleRepairShopUserPool
+          COGNITO_APP_CLIENT_ID:
+            Ref: MotorcycleRepairShopUserPoolClient
+          COGNITO_DOMAIN: motorcycle-repair-shop-user-pool
+      Events:
+        ApiEvent:
+          Type: Api
+          Properties:
+            RestApiId:
+              Ref: MyApi
+            Path: /cashboxes
+            Method: get
+            Auth:
+              Authorizer: CognitoAuthorizer
+              AuthorizationScopes:
+              - motorcycerepairshop-api/read
+  GetCashboxApiLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName:
+        Fn::Sub: /aws/lambda/GetCashboxApi-${Environment}
+      RetentionInDays:
+        Ref: LogRetentionDays
+    DeletionPolicy: Retain
+    DependsOn: GetCashboxApiFunction
+  GetCurrentSessionApiFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName:
+        Fn::Sub: GetCurrentSessionApi-${Environment}
+      Layers:
+      - Ref: SharedLayer
+      CodeUri: s3://aws-sam-cli-managed-default-samclisourcebucket-onon5eakfl9a/10b8085dff7f5283e320ce0e0fedfbb3
+      Handler: main.lambda_handler
+      Role:
+        Fn::GetAtt:
+        - LambdaExecutionRole
+        - Arn
+      Environment:
+        Variables:
+          DB_URL:
+            Ref: DBUrl
+          DB_KEY:
+            Ref: DBKey
+          COGNITO_USER_POOL_ID:
+            Ref: MotorcycleRepairShopUserPool
+          COGNITO_APP_CLIENT_ID:
+            Ref: MotorcycleRepairShopUserPoolClient
+          COGNITO_DOMAIN: motorcycle-repair-shop-user-pool
+      Events:
+        ApiEvent:
+          Type: Api
+          Properties:
+            RestApiId:
+              Ref: MyApi
+            Path: /cashboxes/current-session
+            Method: get
+            Auth:
+              Authorizer: CognitoAuthorizer
+              AuthorizationScopes:
+              - motorcycerepairshop-api/read
+  GetCurrentSessionApiLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName:
+        Fn::Sub: /aws/lambda/GetCurrentSessionApi-${Environment}
+      RetentionInDays:
+        Ref: LogRetentionDays
+    DeletionPolicy: Retain
+    DependsOn: GetCurrentSessionApiFunction
+  AddCashboxApiFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName:
+        Fn::Sub: AddCashboxApi-${Environment}
+      Layers:
+      - Ref: SharedLayer
+      CodeUri: s3://aws-sam-cli-managed-default-samclisourcebucket-onon5eakfl9a/5a6bb2f7fae7996fe74091f1415aeaf5
+      Handler: main.lambda_handler
+      Role:
+        Fn::GetAtt:
+        - LambdaExecutionRole
+        - Arn
+      Environment:
+        Variables:
+          DB_URL:
+            Ref: DBUrl
+          DB_KEY:
+            Ref: DBKey
+          COGNITO_USER_POOL_ID:
+            Ref: MotorcycleRepairShopUserPool
+          COGNITO_APP_CLIENT_ID:
+            Ref: MotorcycleRepairShopUserPoolClient
+          COGNITO_DOMAIN: motorcycle-repair-shop-user-pool
+      Events:
+        ApiEvent:
+          Type: Api
+          Properties:
+            RestApiId:
+              Ref: MyApi
+            Path: /cashboxes/movement
+            Method: post
+            Auth:
+              Authorizer: CognitoAuthorizer
+              AuthorizationScopes:
+              - motorcycerepairshop-api/create
+  AddCashboxApiLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName:
+        Fn::Sub: /aws/lambda/AddCashboxApi-${Environment}
+      RetentionInDays:
+        Ref: LogRetentionDays
+    DeletionPolicy: Retain
+    DependsOn: AddCashboxApiFunction
+  OpenCashboxApiFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName:
+        Fn::Sub: OpenCashboxApi-${Environment}
+      Layers:
+      - Ref: SharedLayer
+      CodeUri: s3://aws-sam-cli-managed-default-samclisourcebucket-onon5eakfl9a/05aef4d4ee284a728d0b9d2ecb108b9e
+      Handler: main.lambda_handler
+      Role:
+        Fn::GetAtt:
+        - LambdaExecutionRole
+        - Arn
+      Environment:
+        Variables:
+          DB_URL:
+            Ref: DBUrl
+          DB_KEY:
+            Ref: DBKey
+          COGNITO_USER_POOL_ID:
+            Ref: MotorcycleRepairShopUserPool
+          COGNITO_APP_CLIENT_ID:
+            Ref: MotorcycleRepairShopUserPoolClient
+          COGNITO_DOMAIN: motorcycle-repair-shop-user-pool
+      Events:
+        ApiEvent:
+          Type: Api
+          Properties:
+            RestApiId:
+              Ref: MyApi
+            Path: /cashboxes/open
+            Method: post
+            Auth:
+              Authorizer: CognitoAuthorizer
+              AuthorizationScopes:
+              - motorcycerepairshop-api/create
+  OpenCashboxApiLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName:
+        Fn::Sub: /aws/lambda/OpenCashboxApi-${Environment}
+      RetentionInDays:
+        Ref: LogRetentionDays
+    DeletionPolicy: Retain
+    DependsOn: OpenCashboxApiFunction
+  CloseCashboxApiFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName:
+        Fn::Sub: CloseCashboxApi-${Environment}
+      Layers:
+      - Ref: SharedLayer
+      CodeUri: s3://aws-sam-cli-managed-default-samclisourcebucket-onon5eakfl9a/12ccdc554f22a0bb7eaccadf5ecccbe8
+      Handler: main.lambda_handler
+      Role:
+        Fn::GetAtt:
+        - LambdaExecutionRole
+        - Arn
+      Environment:
+        Variables:
+          DB_URL:
+            Ref: DBUrl
+          DB_KEY:
+            Ref: DBKey
+          COGNITO_USER_POOL_ID:
+            Ref: MotorcycleRepairShopUserPool
+          COGNITO_APP_CLIENT_ID:
+            Ref: MotorcycleRepairShopUserPoolClient
+          COGNITO_DOMAIN: motorcycle-repair-shop-user-pool
+      Events:
+        ApiEvent:
+          Type: Api
+          Properties:
+            RestApiId:
+              Ref: MyApi
+            Path: /cashboxes/close
+            Method: post
+            Auth:
+              Authorizer: CognitoAuthorizer
+              AuthorizationScopes:
+              - motorcycerepairshop-api/create
+  CloseCashboxApiLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName:
+        Fn::Sub: /aws/lambda/CloseCashboxApi-${Environment}
+      RetentionInDays:
+        Ref: LogRetentionDays
+    DeletionPolicy: Retain
+    DependsOn: CloseCashboxApiFunction
+  GetDashboardApiFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName:
+        Fn::Sub: GetDashboardApi-${Environment}
+      Layers:
+      - Ref: SharedLayer
+      CodeUri: s3://aws-sam-cli-managed-default-samclisourcebucket-onon5eakfl9a/2c461aeee8a5e68619b23cfaaf099051
+      Handler: main.lambda_handler
+      Role:
+        Fn::GetAtt:
+        - LambdaExecutionRole
+        - Arn
+      Environment:
+        Variables:
+          DB_URL:
+            Ref: DBUrl
+          DB_KEY:
+            Ref: DBKey
+          COGNITO_USER_POOL_ID:
+            Ref: MotorcycleRepairShopUserPool
+          COGNITO_APP_CLIENT_ID:
+            Ref: MotorcycleRepairShopUserPoolClient
+          COGNITO_DOMAIN: motorcycle-repair-shop-user-pool
+      Events:
+        ApiEvent:
+          Type: Api
+          Properties:
+            RestApiId:
+              Ref: MyApi
+            Path: /dashboard
+            Method: get
+            Auth:
+              Authorizer: CognitoAuthorizer
+              AuthorizationScopes:
+              - motorcycerepairshop-api/read
+  GetDashboardApiLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName:
+        Fn::Sub: /aws/lambda/GetDashboardApi-${Environment}
+      RetentionInDays:
+        Ref: LogRetentionDays
+    DeletionPolicy: Retain
+    DependsOn: GetDashboardApiFunction
+  AddBulkProductApiFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName:
+        Fn::Sub: AddBulkProductApi-${Environment}
+      Layers:
+      - Ref: SharedLayer
+      CodeUri: s3://aws-sam-cli-managed-default-samclisourcebucket-onon5eakfl9a/c14efa83319ce04938d0b9f2bff6dde1
+      Handler: main.lambda_handler
+      Role:
+        Fn::GetAtt:
+        - LambdaExecutionRole
+        - Arn
+      Environment:
+        Variables:
+          DB_URL:
+            Ref: DBUrl
+          DB_KEY:
+            Ref: DBKey
+          COGNITO_USER_POOL_ID:
+            Ref: MotorcycleRepairShopUserPool
+          COGNITO_APP_CLIENT_ID:
+            Ref: MotorcycleRepairShopUserPoolClient
+          COGNITO_DOMAIN: motorcycle-repair-shop-user-pool
+      Events:
+        ApiEvent:
+          Type: Api
+          Properties:
+            RestApiId:
+              Ref: MyApi
+            Path: /bulk_products
+            Method: post
+            Auth:
+              Authorizer: CognitoAuthorizer
+              AuthorizationScopes:
+              - motorcycerepairshop-api/create
+  GetSuppliersApiFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName:
+        Fn::Sub: GetSuppliersApi-${Environment}
+      Layers:
+      - Ref: SharedLayer
+      CodeUri: s3://aws-sam-cli-managed-default-samclisourcebucket-onon5eakfl9a/de5aa6f63cfe2cb5ad63bb2a67105d62
+      Handler: main.lambda_handler
+      Role:
+        Fn::GetAtt:
+        - LambdaExecutionRole
+        - Arn
+      Environment:
+        Variables:
+          DB_URL:
+            Ref: DBUrl
+          DB_KEY:
+            Ref: DBKey
+          COGNITO_USER_POOL_ID:
+            Ref: MotorcycleRepairShopUserPool
+          COGNITO_APP_CLIENT_ID:
+            Ref: MotorcycleRepairShopUserPoolClient
+          COGNITO_DOMAIN: motorcycle-repair-shop-user-pool
+      Events:
+        ApiEvent:
+          Type: Api
+          Properties:
+            RestApiId:
+              Ref: MyApi
+            Path: /suppliers
+            Method: get
+            Auth:
+              Authorizer: CognitoAuthorizer
+              AuthorizationScopes:
+              - motorcycerepairshop-api/read
+  GetSuppliersApiLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName:
+        Fn::Sub: /aws/lambda/GetSuppliersApi-${Environment}
+      RetentionInDays:
+        Ref: LogRetentionDays
+    DeletionPolicy: Retain
+    DependsOn: GetSuppliersApiFunction
+  GetSuppliersByIdApiFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName:
+        Fn::Sub: GetSuppliersByIdApi-${Environment}
+      Layers:
+      - Ref: SharedLayer
+      CodeUri: s3://aws-sam-cli-managed-default-samclisourcebucket-onon5eakfl9a/6c489ce040eb2deb8d2d06ac7c19955b
+      Handler: main.lambda_handler
+      Role:
+        Fn::GetAtt:
+        - LambdaExecutionRole
+        - Arn
+      Environment:
+        Variables:
+          DB_URL:
+            Ref: DBUrl
+          DB_KEY:
+            Ref: DBKey
+          COGNITO_USER_POOL_ID:
+            Ref: MotorcycleRepairShopUserPool
+          COGNITO_APP_CLIENT_ID:
+            Ref: MotorcycleRepairShopUserPoolClient
+          COGNITO_DOMAIN: motorcycle-repair-shop-user-pool
+      Events:
+        ApiEvent:
+          Type: Api
+          Properties:
+            RestApiId:
+              Ref: MyApi
+            Path: /suppliers/{id}
+            Method: get
+            Auth:
+              Authorizer: CognitoAuthorizer
+              AuthorizationScopes:
+              - motorcycerepairshop-api/read
+  AddSupplierApiFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName:
+        Fn::Sub: AddSupplierApi-${Environment}
+      Layers:
+      - Ref: SharedLayer
+      CodeUri: s3://aws-sam-cli-managed-default-samclisourcebucket-onon5eakfl9a/5b9100429d82347a36f6335460e25f24
+      Handler: main.lambda_handler
+      Role:
+        Fn::GetAtt:
+        - LambdaExecutionRole
+        - Arn
+      Environment:
+        Variables:
+          DB_URL:
+            Ref: DBUrl
+          DB_KEY:
+            Ref: DBKey
+          COGNITO_USER_POOL_ID:
+            Ref: MotorcycleRepairShopUserPool
+          COGNITO_APP_CLIENT_ID:
+            Ref: MotorcycleRepairShopUserPoolClient
+          COGNITO_DOMAIN: motorcycle-repair-shop-user-pool
+      Events:
+        ApiEvent:
+          Type: Api
+          Properties:
+            RestApiId:
+              Ref: MyApi
+            Path: /suppliers
+            Method: post
+            Auth:
+              Authorizer: CognitoAuthorizer
+              AuthorizationScopes:
+              - motorcycerepairshop-api/create
+  AddSupplierApiLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName:
+        Fn::Sub: /aws/lambda/AddSupplierApi-${Environment}
+      RetentionInDays:
+        Ref: LogRetentionDays
+    DeletionPolicy: Retain
+    DependsOn: AddSupplierApiFunction
+  UpdateSupplierApiFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName:
+        Fn::Sub: UpdateSupplierApi-${Environment}
+      Layers:
+      - Ref: SharedLayer
+      CodeUri: s3://aws-sam-cli-managed-default-samclisourcebucket-onon5eakfl9a/1f1ab0bd47f22b2caf062ad3d42b78bc
+      Handler: main.lambda_handler
+      Role:
+        Fn::GetAtt:
+        - LambdaExecutionRole
+        - Arn
+      Environment:
+        Variables:
+          DB_URL:
+            Ref: DBUrl
+          DB_KEY:
+            Ref: DBKey
+          COGNITO_USER_POOL_ID:
+            Ref: MotorcycleRepairShopUserPool
+          COGNITO_APP_CLIENT_ID:
+            Ref: MotorcycleRepairShopUserPoolClient
+          COGNITO_DOMAIN: motorcycle-repair-shop-user-pool
+      Events:
+        ApiEvent:
+          Type: Api
+          Properties:
+            RestApiId:
+              Ref: MyApi
+            Path: /suppliers/{id}
+            Method: put
+            Auth:
+              Authorizer: CognitoAuthorizer
+              AuthorizationScopes:
+              - motorcycerepairshop-api/update
+  DeleteSupplierApiFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName:
+        Fn::Sub: DeleteSupplierApi-${Environment}
+      Layers:
+      - Ref: SharedLayer
+      CodeUri: s3://aws-sam-cli-managed-default-samclisourcebucket-onon5eakfl9a/8dd2d28ad27bec894ce38b6f5828ffd1
+      Handler: main.lambda_handler
+      Role:
+        Fn::GetAtt:
+        - LambdaExecutionRole
+        - Arn
+      Environment:
+        Variables:
+          DB_URL:
+            Ref: DBUrl
+          DB_KEY:
+            Ref: DBKey
+          COGNITO_USER_POOL_ID:
+            Ref: MotorcycleRepairShopUserPool
+          COGNITO_APP_CLIENT_ID:
+            Ref: MotorcycleRepairShopUserPoolClient
+          COGNITO_DOMAIN: motorcycle-repair-shop-user-pool
+      Events:
+        ApiEvent:
+          Type: Api
+          Properties:
+            RestApiId:
+              Ref: MyApi
+            Path: /suppliers/{id}
+            Method: delete
+            Auth:
+              Authorizer: CognitoAuthorizer
+              AuthorizationScopes:
+              - motorcycerepairshop-api/delete
+  GetSalesApiFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName:
+        Fn::Sub: GetSalesApi-${Environment}
+      Layers:
+      - Ref: SharedLayer
+      CodeUri: s3://aws-sam-cli-managed-default-samclisourcebucket-onon5eakfl9a/4d1d2aff777f746363ddf4a9798a8b1b
+      Handler: main.lambda_handler
+      Role:
+        Fn::GetAtt:
+        - LambdaExecutionRole
+        - Arn
+      Environment:
+        Variables:
+          DB_URL:
+            Ref: DBUrl
+          DB_KEY:
+            Ref: DBKey
+          COGNITO_USER_POOL_ID:
+            Ref: MotorcycleRepairShopUserPool
+          COGNITO_APP_CLIENT_ID:
+            Ref: MotorcycleRepairShopUserPoolClient
+          COGNITO_DOMAIN: motorcycle-repair-shop-user-pool
+      Events:
+        ApiEvent:
+          Type: Api
+          Properties:
+            RestApiId:
+              Ref: MyApi
+            Path: /sales
+            Method: get
+            Auth:
+              Authorizer: CognitoAuthorizer
+              AuthorizationScopes:
+              - motorcycerepairshop-api/read
+  GetSalesApiLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName:
+        Fn::Sub: /aws/lambda/GetSalesApi-${Environment}
+      RetentionInDays:
+        Ref: LogRetentionDays
+    DeletionPolicy: Retain
+    DependsOn: GetSalesApiFunction
+  GetSaleByIdApiFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName:
+        Fn::Sub: GetSaleByIdApi-${Environment}
+      Layers:
+      - Ref: SharedLayer
+      CodeUri: s3://aws-sam-cli-managed-default-samclisourcebucket-onon5eakfl9a/22159273424f787a230a5f41b2f52fcd
+      Handler: main.lambda_handler
+      Role:
+        Fn::GetAtt:
+        - LambdaExecutionRole
+        - Arn
+      Environment:
+        Variables:
+          DB_URL:
+            Ref: DBUrl
+          DB_KEY:
+            Ref: DBKey
+          COGNITO_USER_POOL_ID:
+            Ref: MotorcycleRepairShopUserPool
+          COGNITO_APP_CLIENT_ID:
+            Ref: MotorcycleRepairShopUserPoolClient
+          COGNITO_DOMAIN: motorcycle-repair-shop-user-pool
+      Events:
+        ApiEvent:
+          Type: Api
+          Properties:
+            RestApiId:
+              Ref: MyApi
+            Path: /sales/{id}
+            Method: get
+            Auth:
+              Authorizer: CognitoAuthorizer
+              AuthorizationScopes:
+              - motorcycerepairshop-api/read
+  AddSaleApiFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName:
+        Fn::Sub: AddSaleApi-${Environment}
+      Layers:
+      - Ref: SharedLayer
+      CodeUri: s3://aws-sam-cli-managed-default-samclisourcebucket-onon5eakfl9a/3afea1565623f0c4790dfbc21cf4a8ae
+      Handler: main.lambda_handler
+      Role:
+        Fn::GetAtt:
+        - LambdaExecutionRole
+        - Arn
+      Environment:
+        Variables:
+          DB_URL:
+            Ref: DBUrl
+          DB_KEY:
+            Ref: DBKey
+          COGNITO_USER_POOL_ID:
+            Ref: MotorcycleRepairShopUserPool
+          COGNITO_APP_CLIENT_ID:
+            Ref: MotorcycleRepairShopUserPoolClient
+          COGNITO_DOMAIN: motorcycle-repair-shop-user-pool
+      Events:
+        ApiEvent:
+          Type: Api
+          Properties:
+            RestApiId:
+              Ref: MyApi
+            Path: /sales
+            Method: post
+            Auth:
+              Authorizer: CognitoAuthorizer
+              AuthorizationScopes:
+              - motorcycerepairshop-api/create
+  AddSaleApiLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName:
+        Fn::Sub: /aws/lambda/AddSaleApi-${Environment}
+      RetentionInDays:
+        Ref: LogRetentionDays
+    DeletionPolicy: Retain
+    DependsOn: AddSaleApiFunction
+  UpdateSaleApiFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName:
+        Fn::Sub: UpdateSaleApi-${Environment}
+      Layers:
+      - Ref: SharedLayer
+      CodeUri: s3://aws-sam-cli-managed-default-samclisourcebucket-onon5eakfl9a/8f8c33cbf0945b3a4281f1a542833426
+      Handler: main.lambda_handler
+      Role:
+        Fn::GetAtt:
+        - LambdaExecutionRole
+        - Arn
+      Environment:
+        Variables:
+          DB_URL:
+            Ref: DBUrl
+          DB_KEY:
+            Ref: DBKey
+          COGNITO_USER_POOL_ID:
+            Ref: MotorcycleRepairShopUserPool
+          COGNITO_APP_CLIENT_ID:
+            Ref: MotorcycleRepairShopUserPoolClient
+          COGNITO_DOMAIN: motorcycle-repair-shop-user-pool
+      Events:
+        ApiEvent:
+          Type: Api
+          Properties:
+            RestApiId:
+              Ref: MyApi
+            Path: /sales/{id}
+            Method: put
+            Auth:
+              Authorizer: CognitoAuthorizer
+              AuthorizationScopes:
+              - motorcycerepairshop-api/update
+  DeleteSaleApiFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName:
+        Fn::Sub: DeleteSaleApi-${Environment}
+      Layers:
+      - Ref: SharedLayer
+      CodeUri: s3://aws-sam-cli-managed-default-samclisourcebucket-onon5eakfl9a/1798327af44cc3ab7c3307938f7a60cb
+      Handler: main.lambda_handler
+      Role:
+        Fn::GetAtt:
+        - LambdaExecutionRole
+        - Arn
+      Environment:
+        Variables:
+          DB_URL:
+            Ref: DBUrl
+          DB_KEY:
+            Ref: DBKey
+          COGNITO_USER_POOL_ID:
+            Ref: MotorcycleRepairShopUserPool
+          COGNITO_APP_CLIENT_ID:
+            Ref: MotorcycleRepairShopUserPoolClient
+          COGNITO_DOMAIN: motorcycle-repair-shop-user-pool
+      Events:
+        ApiEvent:
+          Type: Api
+          Properties:
+            RestApiId:
+              Ref: MyApi
+            Path: /sales/{id}
+            Method: delete
+            Auth:
+              Authorizer: CognitoAuthorizer
+              AuthorizationScopes:
+              - motorcycerepairshop-api/delete
+  GetPaymentMethodsApiFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName:
+        Fn::Sub: GetPaymentMethodsApi-${Environment}
+      Layers:
+      - Ref: SharedLayer
+      CodeUri: s3://aws-sam-cli-managed-default-samclisourcebucket-onon5eakfl9a/2816c7ab654016b11004a645bb367f6e
+      Handler: main.lambda_handler
+      Role:
+        Fn::GetAtt:
+        - LambdaExecutionRole
+        - Arn
+      Environment:
+        Variables:
+          CORS_ORIGIN: '*'
+          COGNITO_USER_POOL_ID:
+            Ref: MotorcycleRepairShopUserPool
+          COGNITO_APP_CLIENT_ID:
+            Ref: MotorcycleRepairShopUserPoolClient
+          COGNITO_DOMAIN: motorcycle-repair-shop-user-pool
+      Events:
+        ApiEvent:
+          Type: Api
+          Properties:
+            RestApiId:
+              Ref: MyApi
+            Path: /payment-methods
+            Method: get
+            Auth:
+              Authorizer: CognitoAuthorizer
+              AuthorizationScopes:
+              - motorcycerepairshop-api/read
+  GetPaymentMethodsApiLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName:
+        Fn::Sub: /aws/lambda/GetPaymentMethodsApi-${Environment}
+      RetentionInDays:
+        Ref: LogRetentionDays
+    DeletionPolicy: Retain
+    DependsOn: GetPaymentMethodsApiFunction
+  GetCategoriesApiFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName:
+        Fn::Sub: GetCategoriesApi-${Environment}
+      Layers:
+      - Ref: SharedLayer
+      CodeUri: s3://aws-sam-cli-managed-default-samclisourcebucket-onon5eakfl9a/bbfd8e9fa96e483d5917276cefe4c886
+      Handler: main.lambda_handler
+      Role:
+        Fn::GetAtt:
+        - LambdaExecutionRole
+        - Arn
+      Environment:
+        Variables:
+          DB_URL:
+            Ref: DBUrl
+          DB_KEY:
+            Ref: DBKey
+          COGNITO_USER_POOL_ID:
+            Ref: MotorcycleRepairShopUserPool
+          COGNITO_APP_CLIENT_ID:
+            Ref: MotorcycleRepairShopUserPoolClient
+          COGNITO_DOMAIN: motorcycle-repair-shop-user-pool
+      Events:
+        ApiEvent:
+          Type: Api
+          Properties:
+            RestApiId:
+              Ref: MyApi
+            Path: /categories
+            Method: get
+            Auth:
+              Authorizer: CognitoAuthorizer
+              AuthorizationScopes:
+              - motorcycerepairshop-api/read
+  GetCategoriesApiLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName:
+        Fn::Sub: /aws/lambda/GetCategoriesApi-${Environment}
+      RetentionInDays:
+        Ref: LogRetentionDays
+    DeletionPolicy: Retain
+    DependsOn: GetCategoriesApiFunction
+  GetBrandsApiFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName:
+        Fn::Sub: GetBrandsApi-${Environment}
+      Layers:
+      - Ref: SharedLayer
+      CodeUri: s3://aws-sam-cli-managed-default-samclisourcebucket-onon5eakfl9a/ccb4e7bf055b562f1e52c859ca5b4bae
+      Handler: main.lambda_handler
+      Role:
+        Fn::GetAtt:
+        - LambdaExecutionRole
+        - Arn
+      Environment:
+        Variables:
+          DB_URL:
+            Ref: DBUrl
+          DB_KEY:
+            Ref: DBKey
+          COGNITO_USER_POOL_ID:
+            Ref: MotorcycleRepairShopUserPool
+          COGNITO_APP_CLIENT_ID:
+            Ref: MotorcycleRepairShopUserPoolClient
+          COGNITO_DOMAIN: motorcycle-repair-shop-user-pool
+      Events:
+        ApiEvent:
+          Type: Api
+          Properties:
+            RestApiId:
+              Ref: MyApi
+            Path: /brands
+            Method: get
+            Auth:
+              Authorizer: CognitoAuthorizer
+              AuthorizationScopes:
+              - motorcycerepairshop-api/read
+  GetBrandsApiLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName:
+        Fn::Sub: /aws/lambda/GetBrandsApi-${Environment}
+      RetentionInDays:
+        Ref: LogRetentionDays
+    DeletionPolicy: Retain
+    DependsOn: GetBrandsApiFunction

@@ -1,13 +1,12 @@
-import json
+from core.use_case import CashboxUseCase
+from core.repository import CashboxRepository
 from decorators.lambda_decorators import cors_enabled, cognito_auth_required, debug_event
-from repositories.cashbox_repository import CurrentSessionRepository
-from use_cases.cashbox_use_case import CurrentSessionUseCase
 from db.db_client import DBClient
 from utils.response_utils import ResponseUtils
 
 db_client = DBClient.get_client()
-repository = CurrentSessionRepository(db_client)
-use_case = CurrentSessionUseCase(repository)
+repository = CashboxRepository(db_client)
+use_case = CashboxUseCase(repository)
 
 
 @cors_enabled
@@ -15,19 +14,10 @@ use_case = CurrentSessionUseCase(repository)
 @debug_event
 def lambda_handler(event, context):
     """
-    Lambda para obtener la sesión de caja abierta actual
+    Lambda para obtener la sesión de caja abierta actual.
 
     Query params opcionales:
     - user_id: filtrar por usuario específico (UUID)
-
-    No requiere parámetros. Retorna:
-    - Datos de la sesión abierta si existe
-    - null si no hay sesión abierta
-
-    La respuesta incluye:
-    - Datos de la sesión (id, fecha, monto apertura, etc.)
-    - Información del usuario que abrió
-    - Balance esperado actual (calculado en tiempo real)
     """
     print(f'event: {event}')
     print(f'context: {context}')
@@ -53,4 +43,3 @@ def lambda_handler(event, context):
         error_msg = str(e)
         print(f'Error al obtener sesión actual: {error_msg}')
         return ResponseUtils.internal_server_error_response(f"Error inesperado: {error_msg}")
-

@@ -1,11 +1,9 @@
-import json
-
-from use_cases.supplier_use_case import SupplierUseCase
+from core.use_case import SupplierUseCase
+from core.repository import SupplierRepository
 from utils.response_utils import ResponseUtils
 from decorators.lambda_decorators import cors_enabled, cognito_auth_required
-from repositories.supplier_repository import SupplierRepository
 from db.db_client import DBClient
-from load_initial_parameters import load_initial_parameters
+from params import get_params
 
 db_client = DBClient.get_client()
 repository = SupplierRepository(db_client)
@@ -19,12 +17,12 @@ def lambda_handler(event, context):
     print(f'context: {context}')
 
     try:
-        id_supplier = load_initial_parameters(event)
+        id_supplier = get_params(event)
 
         if isinstance(id_supplier, dict) and "statusCode" in id_supplier:
             return id_supplier
 
-        result = use_case.delete_product(id_supplier)
+        result = use_case.delete_supplier(id_supplier)
 
         return ResponseUtils.success_response({
             "message": "Proveedor eliminado exitosamente",

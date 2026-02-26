@@ -136,6 +136,15 @@ class RepairRepository:
         except Exception as e:
             raise Exception(f'Ha ocurrido un problema al eliminar la reparación: {e}')
 
+    def update(self, id_repair: str, update_data: dict) -> dict:
+        try:
+            response = self.db_client.table("repairs").update(update_data).eq('id_repair', id_repair).execute()
+            if not response.data:
+                raise Exception(f'No se pudo actualizar la reparación con ID {id_repair}')
+            return response.data[0]
+        except Exception as e:
+            raise Exception(f'Error al actualizar la reparación: {str(e)}')
+
     def delete_materials(self, id_repair: str) -> List[dict]:
         try:
             response = self.db_client.table("repair_materials").delete().eq('id_repair', id_repair).execute()

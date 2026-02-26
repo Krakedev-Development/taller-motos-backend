@@ -3,7 +3,7 @@ from core.repository import ProductRepository
 from utils.response_utils import ResponseUtils
 from decorators.lambda_decorators import cors_enabled, cognito_auth_required
 from db.db_client import DBClient
-from load_delete_parameters import load_delete_parameters
+from params import get_params
 
 db_client = DBClient.get_client()
 repository = ProductRepository(db_client)
@@ -17,7 +17,7 @@ def lambda_handler(event, context):
     print(f'context: {context}')
 
     try:
-        id_product = load_delete_parameters(event)
+        id_product = get_params(event)
 
         if isinstance(id_product, dict) and "statusCode" in id_product:
             return id_product

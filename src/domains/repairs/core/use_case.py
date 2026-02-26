@@ -61,6 +61,16 @@ class RepairUseCase:
         except Exception as e:
             raise Exception(f"Error al eliminar la reparación: {str(e)}")
 
+    def update_repair(self, id_repair: str, update_data: dict):
+        existing = self.repository.find_by_id(id_repair)
+        if existing is None:
+            raise Exception(f'No se encontró la reparación con ID {id_repair}')
+        
+        try:
+            return self.repository.update(id_repair, update_data)
+        except Exception as e:
+            raise Exception(f"Error al actualizar la reparación: {str(e)}")
+
     def save_images(self, photos: list) -> list:
         try:
             return self.repository.upload_photos("repairs", photos)

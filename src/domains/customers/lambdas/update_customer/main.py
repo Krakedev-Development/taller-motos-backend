@@ -3,7 +3,7 @@ from core.repository import CustomerRepository
 from utils.response_utils import ResponseUtils
 from decorators.lambda_decorators import cors_enabled, cognito_auth_required
 from db.db_client import DBClient
-from load_update_parameters import load_update_parameters
+from params import get_params
 
 db_client = DBClient.get_client()
 repository = CustomerRepository(db_client)
@@ -17,7 +17,7 @@ def lambda_handler(event, context):
     print(f'context: {context}')
 
     try:
-        params = load_update_parameters(event)
+        params = get_params(event)
 
         if isinstance(params, dict) and "statusCode" in params:
             return params

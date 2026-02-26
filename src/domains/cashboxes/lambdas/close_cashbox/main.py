@@ -1,13 +1,13 @@
 import json
+from core.use_case import CashboxUseCase
+from core.repository import CashboxRepository
 from decorators.lambda_decorators import cors_enabled, cognito_auth_required, debug_event
-from repositories.cashbox_repository import CloseCashboxRepository
-from use_cases.cashbox_use_case import CloseCashboxUseCase
 from db.db_client import DBClient
 from utils.response_utils import ResponseUtils
 
 db_client = DBClient.get_client()
-repository = CloseCashboxRepository(db_client)
-use_case = CloseCashboxUseCase(repository)
+repository = CashboxRepository(db_client)
+use_case = CashboxUseCase(repository)
 
 
 @cors_enabled
@@ -15,18 +15,9 @@ use_case = CloseCashboxUseCase(repository)
 @debug_event
 def lambda_handler(event, context):
     """
-    Lambda para cerrar la sesión de caja diaria
+    Lambda para cerrar la sesión de caja diaria.
 
-    Body esperado:
-    {
-        "actual_closing": 1500.50,
-        "closed_by": "uuid-del-usuario",
-        "notes": "Opcional: notas sobre el cierre o diferencias encontradas"
-    }
-
-    El sistema calculará automáticamente:
-    - expected_closing: suma de opening_amount + ingresos - egresos
-    - difference: actual_closing - expected_closing
+    Body: { "actual_closing": 1500.50, "closed_by": "uuid", "notes": "opcional" }
     """
     print(f'event: {event}')
     print(f'context: {context}')
@@ -35,8 +26,7 @@ def lambda_handler(event, context):
         body = json.loads(event.get('body', '{}'))
 
         required_fields = ['actual_closing', 'closed_by']
-        missing_fields = [field for field in required_fields if field not in body]
-
+        missing_fields = [f for f in required_fields if f not in body]
         if missing_fields:
             return ResponseUtils.bad_request_response(
                 f"Faltan los siguientes campos requeridos: {', '.join(missing_fields)}"
@@ -47,21 +37,14 @@ def lambda_handler(event, context):
         except (ValueError, TypeError):
             return ResponseUtils.bad_request_response("El campo 'actual_closing' debe ser un número válido")
 
-        if actual_closing < 0:
-            return ResponseUtils.bad_request_response("El monto de cierre no puede ser negativo")
-
-        closed_by = body['closed_by']
-        notes = body.get('notes')
-
-        result = use_case.execute(
+        result = use_case.close_session(
             actual_closing=actual_closing,
-            closed_by=closed_by,
-            notes=notes
+            closed_by=body['closed_by'],
+            notes=body.get('notes')
         )
 
         difference = result.get('difference', 0)
         message = "Sesión de caja cerrada correctamente"
-
         if difference > 0:
             message += f" (Sobrante: ${difference:.2f})"
         elif difference < 0:

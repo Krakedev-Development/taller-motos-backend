@@ -3,7 +3,7 @@ from core.repository import RepairRepository
 from utils.response_utils import ResponseUtils
 from decorators.lambda_decorators import cors_enabled, cognito_auth_required
 from db.db_client import DBClient
-from load_initial_parameters import load_initial_parameters
+from params import get_params
 
 db_client = DBClient.get_client()
 repository = RepairRepository(db_client)
@@ -17,7 +17,7 @@ def lambda_handler(event, context):
     print(f'context: {context}')
 
     try:
-        repair_data = load_initial_parameters(event)
+        repair_data = get_params(event)
 
         if isinstance(repair_data, dict) and "statusCode" in repair_data:
             return repair_data

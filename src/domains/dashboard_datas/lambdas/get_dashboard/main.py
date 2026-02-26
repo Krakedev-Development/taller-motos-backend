@@ -1,7 +1,6 @@
-import json
-from use_cases.dashboard_use_case import DashboardUseCase
+from core.use_case import DashboardUseCase
+from core.repository import DashboardRepository
 from decorators.lambda_decorators import cors_enabled, cognito_auth_required, debug_event
-from repositories.dashboard_repository import DashboardRepository
 from db.db_client import DBClient
 from utils.response_utils import ResponseUtils
 
@@ -13,15 +12,18 @@ use_case = DashboardUseCase(repository)
 @debug_event
 @cognito_auth_required
 def lambda_handler(event, context):
-
+    """
+    Lambda to fetch Dashboard data.
+    Query Params:
+    - code: optional, 'SELLER' or other
+    """
     print(f'event: {event}')
-    print(f'context: {context}')
     
     try:
         query_params = event.get('queryStringParameters') or {}
         code = query_params.get('code', None)
         
-        print(f'Dashboard code solicitado: {code}')
+        print(f'Dashboard code requested: {code}')
         
         result = use_case.get_dashboard_data(code=code)
         

@@ -1181,8 +1181,8 @@ Resources:
       FunctionName: !Sub "GetSuppliersApi-${Environment}"
       Layers:
         - !Ref SharedLayer
-      CodeUri: src/domains/suppliers/lambdas/get_suppliers
-      Handler: main.lambda_handler
+      CodeUri: src/domains/suppliers/
+      Handler: lambdas/get_suppliers/main.lambda_handler
       Role: !GetAtt LambdaExecutionRole.Arn
       Environment:
         Variables:
@@ -1221,8 +1221,8 @@ Resources:
       FunctionName: !Sub "GetSuppliersByIdApi-${Environment}"
       Layers:
         - !Ref SharedLayer
-      CodeUri: src/domains/suppliers/lambdas/get_supplier_by_id
-      Handler: main.lambda_handler
+      CodeUri: src/domains/suppliers/
+      Handler: lambdas/get_supplier_by_id/main.lambda_handler
       Role: !GetAtt LambdaExecutionRole.Arn
       Environment:
         Variables:
@@ -1253,8 +1253,8 @@ Resources:
       FunctionName: !Sub "AddSupplierApi-${Environment}"
       Layers:
         - !Ref SharedLayer
-      CodeUri: src/domains/suppliers/lambdas/add_supplier
-      Handler: main.lambda_handler
+      CodeUri: src/domains/suppliers/
+      Handler: lambdas/add_supplier/main.lambda_handler
       Role: !GetAtt LambdaExecutionRole.Arn
       Environment:
         Variables:
@@ -1293,8 +1293,8 @@ Resources:
       FunctionName: !Sub "UpdateSupplierApi-${Environment}"
       Layers:
         - !Ref SharedLayer
-      CodeUri: src/domains/suppliers/lambdas/update_supplier
-      Handler: main.lambda_handler
+      CodeUri: src/domains/suppliers/
+      Handler: lambdas/update_supplier/main.lambda_handler
       Role: !GetAtt LambdaExecutionRole.Arn
       Environment:
         Variables:
@@ -1325,8 +1325,8 @@ Resources:
       FunctionName: !Sub "DeleteSupplierApi-${Environment}"
       Layers:
         - !Ref SharedLayer
-      CodeUri: src/domains/suppliers/lambdas/delete_supplier
-      Handler: main.lambda_handler
+      CodeUri: src/domains/suppliers/
+      Handler: lambdas/delete_supplier/main.lambda_handler
       Role: !GetAtt LambdaExecutionRole.Arn
       Environment:
         Variables:
@@ -1641,3 +1641,264 @@ Resources:
       RetentionInDays: !Ref LogRetentionDays
     DeletionPolicy: Retain
     DependsOn: GetBrandsApiFunction
+
+  # ============================================
+  # === CASHBOXES ===
+  # ============================================
+  GetCashboxApiFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub "GetCashboxApi-${Environment}"
+      Layers:
+        - !Ref SharedLayer
+      CodeUri: src/domains/cashboxes/
+      Handler: lambdas/get_cashbox/main.lambda_handler
+      Role: !GetAtt LambdaExecutionRole.Arn
+      Environment:
+        Variables:
+          DB_URL: !Ref DBUrl
+          DB_KEY: !Ref DBKey
+          COGNITO_USER_POOL_ID: !Ref MotorcycleRepairShopUserPool
+          COGNITO_APP_CLIENT_ID: !Ref MotorcycleRepairShopUserPoolClient
+          COGNITO_DOMAIN: motorcycle-repair-shop-user-pool
+      Events:
+        ApiEvent:
+          Type: Api
+          Properties:
+            RestApiId: !Ref MyApi
+            Path: /cashbox
+            Method: get
+            Auth:
+              Authorizer: CognitoAuthorizer
+              AuthorizationScopes:
+                - motorcycerepairshop-api/read
+
+  GetCashboxApiLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub "/aws/lambda/GetCashboxApi-${Environment}"
+      RetentionInDays: !Ref LogRetentionDays
+    DeletionPolicy: Retain
+    DependsOn: GetCashboxApiFunction
+
+  AddCashboxApiFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub "AddCashboxApi-${Environment}"
+      Layers:
+        - !Ref SharedLayer
+      CodeUri: src/domains/cashboxes/
+      Handler: lambdas/add_cashbox/main.lambda_handler
+      Role: !GetAtt LambdaExecutionRole.Arn
+      Environment:
+        Variables:
+          DB_URL: !Ref DBUrl
+          DB_KEY: !Ref DBKey
+          COGNITO_USER_POOL_ID: !Ref MotorcycleRepairShopUserPool
+          COGNITO_APP_CLIENT_ID: !Ref MotorcycleRepairShopUserPoolClient
+          COGNITO_DOMAIN: motorcycle-repair-shop-user-pool
+      Events:
+        ApiEvent:
+          Type: Api
+          Properties:
+            RestApiId: !Ref MyApi
+            Path: /cashbox
+            Method: post
+            Auth:
+              Authorizer: CognitoAuthorizer
+              AuthorizationScopes:
+                - motorcycerepairshop-api/create
+
+  AddCashboxApiLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub "/aws/lambda/AddCashboxApi-${Environment}"
+      RetentionInDays: !Ref LogRetentionDays
+    DeletionPolicy: Retain
+    DependsOn: AddCashboxApiFunction
+
+  OpenCashboxApiFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub "OpenCashboxApi-${Environment}"
+      Layers:
+        - !Ref SharedLayer
+      CodeUri: src/domains/cashboxes/
+      Handler: lambdas/open_cashbox/main.lambda_handler
+      Role: !GetAtt LambdaExecutionRole.Arn
+      Environment:
+        Variables:
+          DB_URL: !Ref DBUrl
+          DB_KEY: !Ref DBKey
+          COGNITO_USER_POOL_ID: !Ref MotorcycleRepairShopUserPool
+          COGNITO_APP_CLIENT_ID: !Ref MotorcycleRepairShopUserPoolClient
+          COGNITO_DOMAIN: motorcycle-repair-shop-user-pool
+      Events:
+        ApiEvent:
+          Type: Api
+          Properties:
+            RestApiId: !Ref MyApi
+            Path: /cashbox/open
+            Method: post
+            Auth:
+              Authorizer: CognitoAuthorizer
+              AuthorizationScopes:
+                - motorcycerepairshop-api/create
+
+  OpenCashboxApiLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub "/aws/lambda/OpenCashboxApi-${Environment}"
+      RetentionInDays: !Ref LogRetentionDays
+    DeletionPolicy: Retain
+    DependsOn: OpenCashboxApiFunction
+
+  CloseCashboxApiFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub "CloseCashboxApi-${Environment}"
+      Layers:
+        - !Ref SharedLayer
+      CodeUri: src/domains/cashboxes/
+      Handler: lambdas/close_cashbox/main.lambda_handler
+      Role: !GetAtt LambdaExecutionRole.Arn
+      Environment:
+        Variables:
+          DB_URL: !Ref DBUrl
+          DB_KEY: !Ref DBKey
+          COGNITO_USER_POOL_ID: !Ref MotorcycleRepairShopUserPool
+          COGNITO_APP_CLIENT_ID: !Ref MotorcycleRepairShopUserPoolClient
+          COGNITO_DOMAIN: motorcycle-repair-shop-user-pool
+      Events:
+        ApiEvent:
+          Type: Api
+          Properties:
+            RestApiId: !Ref MyApi
+            Path: /cashbox/close
+            Method: post
+            Auth:
+              Authorizer: CognitoAuthorizer
+              AuthorizationScopes:
+                - motorcycerepairshop-api/update
+
+  CloseCashboxApiLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub "/aws/lambda/CloseCashboxApi-${Environment}"
+      RetentionInDays: !Ref LogRetentionDays
+    DeletionPolicy: Retain
+    DependsOn: CloseCashboxApiFunction
+
+  GetCurrentSessionApiFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub "GetCurrentSessionApi-${Environment}"
+      Layers:
+        - !Ref SharedLayer
+      CodeUri: src/domains/cashboxes/
+      Handler: lambdas/get_current_session/main.lambda_handler
+      Role: !GetAtt LambdaExecutionRole.Arn
+      Environment:
+        Variables:
+          DB_URL: !Ref DBUrl
+          DB_KEY: !Ref DBKey
+          COGNITO_USER_POOL_ID: !Ref MotorcycleRepairShopUserPool
+          COGNITO_APP_CLIENT_ID: !Ref MotorcycleRepairShopUserPoolClient
+          COGNITO_DOMAIN: motorcycle-repair-shop-user-pool
+      Events:
+        ApiEvent:
+          Type: Api
+          Properties:
+            RestApiId: !Ref MyApi
+            Path: /cashbox/session/current
+            Method: get
+            Auth:
+              Authorizer: CognitoAuthorizer
+              AuthorizationScopes:
+                - motorcycerepairshop-api/read
+
+  GetCurrentSessionApiLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub "/aws/lambda/GetCurrentSessionApi-${Environment}"
+      RetentionInDays: !Ref LogRetentionDays
+    DeletionPolicy: Retain
+    DependsOn: GetCurrentSessionApiFunction
+
+  # ============================================
+  # === BULK PRODUCTS ===
+  # ============================================
+  AddBulkProductsApiFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub "AddBulkProductsApi-${Environment}"
+      Layers:
+        - !Ref SharedLayer
+      CodeUri: src/domains/bulk_products/
+      Handler: lambdas/add_products/main.lambda_handler
+      Role: !GetAtt LambdaExecutionRole.Arn
+      Environment:
+        Variables:
+          DB_URL: !Ref DBUrl
+          DB_KEY: !Ref DBKey
+          COGNITO_USER_POOL_ID: !Ref MotorcycleRepairShopUserPool
+          COGNITO_APP_CLIENT_ID: !Ref MotorcycleRepairShopUserPoolClient
+          COGNITO_DOMAIN: motorcycle-repair-shop-user-pool
+      Events:
+        ApiEvent:
+          Type: Api
+          Properties:
+            RestApiId: !Ref MyApi
+            Path: /bulk-products
+            Method: post
+            Auth:
+              Authorizer: CognitoAuthorizer
+              AuthorizationScopes:
+                - motorcycerepairshop-api/create
+
+  AddBulkProductsApiLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub "/aws/lambda/AddBulkProductsApi-${Environment}"
+      RetentionInDays: !Ref LogRetentionDays
+    DeletionPolicy: Retain
+    DependsOn: AddBulkProductsApiFunction
+
+  # ============================================
+  # === DASHBOARD ===
+  # ============================================
+  GetDashboardApiFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub "GetDashboardApi-${Environment}"
+      Layers:
+        - !Ref SharedLayer
+      CodeUri: src/domains/dashboard_datas/
+      Handler: lambdas/get_dashboard/main.lambda_handler
+      Role: !GetAtt LambdaExecutionRole.Arn
+      Environment:
+        Variables:
+          DB_URL: !Ref DBUrl
+          DB_KEY: !Ref DBKey
+          COGNITO_USER_POOL_ID: !Ref MotorcycleRepairShopUserPool
+          COGNITO_APP_CLIENT_ID: !Ref MotorcycleRepairShopUserPoolClient
+          COGNITO_DOMAIN: motorcycle-repair-shop-user-pool
+      Events:
+        ApiEvent:
+          Type: Api
+          Properties:
+            RestApiId: !Ref MyApi
+            Path: /dashboard
+            Method: get
+            Auth:
+              Authorizer: CognitoAuthorizer
+              AuthorizationScopes:
+                - motorcycerepairshop-api/read
+
+  GetDashboardApiLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub "/aws/lambda/GetDashboardApi-${Environment}"
+      RetentionInDays: !Ref LogRetentionDays
+    DeletionPolicy: Retain
+    DependsOn: GetDashboardApiFunction

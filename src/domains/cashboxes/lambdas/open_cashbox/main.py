@@ -1,13 +1,13 @@
 import json
+from core.use_case import CashboxUseCase
+from core.repository import CashboxRepository
 from decorators.lambda_decorators import cors_enabled, cognito_auth_required, debug_event
-from repositories.cashbox_repository import OpenCashboxRepository
-from use_cases.cashbox_use_case import OpenCashboxUseCase
 from db.db_client import DBClient
 from utils.response_utils import ResponseUtils
 
 db_client = DBClient.get_client()
-repository = OpenCashboxRepository(db_client)
-use_case = OpenCashboxUseCase(repository)
+repository = CashboxRepository(db_client)
+use_case = CashboxUseCase(repository)
 
 
 @cors_enabled
@@ -15,14 +15,9 @@ use_case = OpenCashboxUseCase(repository)
 @debug_event
 def lambda_handler(event, context):
     """
-    Lambda para abrir una sesión de caja diaria
+    Lambda para abrir una sesión de caja diaria.
 
-    Body esperado:
-    {
-        "opening_amount": 100.00,
-        "opened_by": "uuid-del-usuario",
-        "notes": "Opcional: notas de apertura"
-    }
+    Body: { "opening_amount": 100.00, "opened_by": "uuid", "notes": "opcional" }
     """
     print(f'event: {event}')
     print(f'context: {context}')
@@ -31,8 +26,7 @@ def lambda_handler(event, context):
         body = json.loads(event.get('body', '{}'))
 
         required_fields = ['opening_amount', 'opened_by']
-        missing_fields = [field for field in required_fields if field not in body]
-
+        missing_fields = [f for f in required_fields if f not in body]
         if missing_fields:
             return ResponseUtils.bad_request_response(
                 f"Faltan los siguientes campos requeridos: {', '.join(missing_fields)}"
@@ -43,16 +37,10 @@ def lambda_handler(event, context):
         except (ValueError, TypeError):
             return ResponseUtils.bad_request_response("El campo 'opening_amount' debe ser un número válido")
 
-        if opening_amount < 0:
-            return ResponseUtils.bad_request_response("El monto de apertura no puede ser negativo")
-
-        opened_by = body['opened_by']
-        notes = body.get('notes')
-
-        result = use_case.execute(
+        result = use_case.open_session(
             opening_amount=opening_amount,
-            opened_by=opened_by,
-            notes=notes
+            opened_by=body['opened_by'],
+            notes=body.get('notes')
         )
 
         return ResponseUtils.created_response({

@@ -3,7 +3,7 @@ from core.repository import MechanicRepository
 from utils.response_utils import ResponseUtils
 from decorators.lambda_decorators import cors_enabled, cognito_auth_required
 from db.db_client import DBClient
-from load_initial_parameters import load_initial_parameters
+from params import get_params
 
 db_client = DBClient.get_client()
 repository = MechanicRepository(db_client)
@@ -16,7 +16,7 @@ def lambda_handler(event, context):
     print(f'context: {context}')
 
     try:
-        mechanic = load_initial_parameters(event)
+        mechanic = get_params(event)
 
         if isinstance(mechanic, dict) and "statusCode" in mechanic:
             return mechanic
